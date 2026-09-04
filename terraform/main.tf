@@ -69,9 +69,10 @@ resource "proxmox_virtual_environment_vm" "core" {
   }
 
   network_device {
-    bridge  = var.network_bridge
-    vlan_id = var.vlan_id
-    model   = "virtio"
+    bridge   = var.network_bridge
+    vlan_id  = var.vlan_id
+    model    = "virtio"
+    firewall = var.firewall_enabled
   }
 
   initialization {
@@ -90,7 +91,7 @@ resource "proxmox_virtual_environment_vm" "core" {
     }
 
     user_account {
-      username = "ansible"
+      username = var.guest_username
       keys     = local.ssh_public_keys
     }
   }

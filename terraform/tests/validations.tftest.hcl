@@ -4,7 +4,8 @@ mock_provider "local" {}
 variables {
   proxmox_endpoint             = "https://pve.example:8006/"
   pve_hosts                    = { "pve-0" = "10.0.0.10", "pve-1" = "10.0.0.11" }
-  proxmox_ssh_user             = "ansible"
+  proxmox_ssh_user             = "svcuser"
+  guest_username               = "svcuser"
   proxmox_ssh_private_key_file = "~/.ssh/id_ecdsa"
   network_bridge               = "vmbr0"
   vlan_id                      = 130
