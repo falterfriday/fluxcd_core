@@ -1,0 +1,119 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rook-ceph-cluster
+  namespace: rook-ceph
+spec:
+  interval: 30m
+  dependsOn:
+    - name: rook-ceph
+      namespace: rook-ceph
+  chart:
+    spec:
+      chart: rook-ceph-cluster
+      version: "v1.20.7"
+      sourceRef:
+        kind: HelmRepository
+        name: rook-release
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    operatorNamespace: rook-ceph
+    cephImage:
+      repository: quay.io/ceph/ceph
+      tag: v20.2.4
+      allowUnsupported: false
+    monitoring:
+      enabled: false
+      createPrometheusRules: false
+    toolbox:
+      enabled: true
+    cephClusterSpec:
+      dataDirHostPath: /var/lib/rook
+      skipUpgradeChecks: false
+      continueUpgradeAfterChecksEvenIfNotHealthy: false
+      waitTimeoutForHealthyOSDInMinutes: 10
+      mon:
+        count: 3
+        allowMultiplePerNode: false
+      mgr:
+        count: 2
+        modules:
+          - name: rook
+            enabled: true
+      dashboard:
+        enabled: true
+        ssl: true
+      network:
+        provider: host
+      storage:
+        useAllNodes: false
+        useAllDevices: false
+        nodes:
+          - name: "core-srv-0"
+            devices:
+              - name: "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+          - name: "core-srv-1"
+            devices:
+              - name: "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+          - name: "core-srv-2"
+            devices:
+              - name: "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+        config:
+          crushRoot: "default"
+          storeType: bluestore
+      priorityClassNames:
+        mon: system-node-critical
+        osd: system-node-critical
+        mgr: system-cluster-critical
+      crashCollector:
+        disable: false
+      logCollector:
+        enabled: true
+        periodicity: daily
+        maxLogSize: 500M
+      removeOSDsIfOutAndSafeToRemove: false
+      cleanupPolicy:
+        confirmation: ""
+        allowUninstallWithVolumeClaimsPresent: false
+    configOverride: |
+      [global]
+      mon_allow_pool_delete = true
+      bdev_enable_discard = true
+      bdev_async_discard = true
+      osd_pool_default_size = 3
+      osd_pool_default_min_size = 2
+    ingress:
+      dashboard:
+        enabled: false
+    cephFileSystems: []
+    cephObjectStores: []
+    cephBlockPools:
+      - name: ceph-blockpool
+        spec:
+          failureDomain: host
+          replicated:
+            size: 3
+        storageClass:
+          enabled: true
+          name: ceph-block
+          isDefault: true
+          reclaimPolicy: Delete
+          allowVolumeExpansion: true
+          parameters:
+            imageFormat: "2"
+            imageFeatures: layering
+            csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+            csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+            csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+            csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+            csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+            csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+            csi.storage.k8s.io/fstype: ext4
