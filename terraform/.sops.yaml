@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: terraform\.tfvars$
+    age: age1sw4xgx4wyxx7s95vmc309dwy2ml5gfkvcfvy7ryax9zqzfxakqws49zev8
