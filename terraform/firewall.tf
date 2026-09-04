@@ -34,6 +34,15 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
     type    = "in"
     action  = "ACCEPT"
     proto   = "tcp"
+    dport   = "6443"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "Kubernetes API between nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
     dport   = "9345"
     source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
     comment = "RKE2 supervisor"

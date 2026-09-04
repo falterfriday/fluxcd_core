@@ -1,0 +1,122 @@
+---
+name: flux
+
+on:
+  pull_request:
+    paths:
+      - 'clusters/**'
+      - 'bootstrap/**'
+      - '.sops.yaml'
+      - '.yamllint.yaml'
+      - '.github/workflows/flux.yml'
+      - '.github/scripts/**'
+  push:
+    branches: [main]
+    paths:
+      - 'clusters/**'
+      - 'bootstrap/**'
+      - '.sops.yaml'
+      - '.yamllint.yaml'
+      - '.github/workflows/flux.yml'
+      - '.github/scripts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flux-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KUBECONFORM_VERSION: v0.8.0
+  KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+  KUSTOMIZE_VERSION: v5.8.1
+  KUSTOMIZE_SHA256: 029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d
+  FLUX_VERSION: 2.9.3
+
+jobs:
+  sops-guard:
+    name: sops guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --disable-pip-version-check pyyaml
+
+      - name: Verify SOPS encryption invariants
+        run: python3 .github/scripts/sops-guard.py
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install yamllint
+        run: pip install --disable-pip-version-check yamllint
+
+      - name: Lint Flux manifests
+        run: yamllint -f github -c .yamllint.yaml clusters/ bootstrap/
+
+  manifests:
+    name: build and schema-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --disable-pip-version-check pyyaml
+
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@889be9d6cc8afa8ed639e1e1ba4ab678e3b38d8c  # v2.9.4
+        with:
+          version: ${{ env.FLUX_VERSION }}
+
+      - name: Install kustomize
+        run: |
+          set -euo pipefail
+          archive="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl -sSLo "$archive" \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/${archive}"
+          echo "${KUSTOMIZE_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" kustomize
+          sudo install -m 0755 kustomize /usr/local/bin/kustomize
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          archive="kubeconform-linux-amd64.tar.gz"
+          curl -sSLo "$archive" \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/${archive}"
+          echo "${KUBECONFORM_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" kubeconform
+          sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
+
+      - name: Render and validate every Flux Kustomization
+        run: .github/scripts/validate-kustomizations.sh
