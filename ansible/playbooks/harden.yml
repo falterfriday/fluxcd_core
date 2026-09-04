@@ -17,11 +17,11 @@
     - role: UBUNTU24-CIS
 
   post_tasks:
-    - name: Clear failed units left by removed packages
+    - name: Clear failed units left by removed packages # noqa command-instead-of-module
       ansible.builtin.command: systemctl reset-failed
       changed_when: false
 
-    - name: Confirm the system is not degraded
+    - name: Confirm the system is not degraded # noqa command-instead-of-module
       ansible.builtin.command: systemctl is-system-running
       register: system_state
       changed_when: false

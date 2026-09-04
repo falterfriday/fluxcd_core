@@ -5,7 +5,6 @@ variables {
   proxmox_endpoint             = "https://pve.example:8006/"
   pve_hosts                    = { "pve-0" = "10.0.0.10", "pve-1" = "10.0.0.11" }
   proxmox_ssh_user             = "svcuser"
-  guest_username               = "svcuser"
   proxmox_ssh_private_key_file = "~/.ssh/id_ecdsa"
   network_bridge               = "vmbr0"
   vlan_id                      = 130
@@ -13,6 +12,10 @@ variables {
   nameservers                  = ["10.0.0.53"]
   search_domain                = "example.test"
   proxmox_api_token            = "test@pam!test=00000000-0000-0000-0000-000000000000"
+  api_hostname                 = "api.example.test"
+  ingress_lb_ip                = "10.0.0.100"
+  guest_username               = "svcuser"
+  guest_sudo_password          = "test-only-not-a-real-password"
   ssh_public_keys              = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest test@test"]
 
   nodes = {
