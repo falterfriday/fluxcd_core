@@ -8,6 +8,7 @@ terraform {
       s3 = "https://rustfs.internal.stplabs.io"
     }
 
+    encrypt                     = true
     use_path_style              = true
     skip_credentials_validation = true
     skip_metadata_api_check     = true
