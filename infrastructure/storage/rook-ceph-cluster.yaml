@@ -82,7 +82,7 @@ spec:
       removeOSDsIfOutAndSafeToRemove: false
       cleanupPolicy:
         confirmation: ""
-        allowUninstallWithVolumeClaimsPresent: false
+        allowUninstallWithVolumes: false
     configOverride: |
       [global]
       mon_allow_pool_delete = true
