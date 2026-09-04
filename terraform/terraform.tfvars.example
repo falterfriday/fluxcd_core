@@ -1,0 +1,24 @@
+proxmox_api_token = "REPLACE@pam!REPLACE=00000000-0000-0000-0000-000000000000"
+
+proxmox_endpoint = "https://PVE-HOST:8006/"
+
+pve_hosts = {
+  "PVE-NODE-0" = "PVE-NODE-0-ADDRESS"
+  "PVE-NODE-1" = "PVE-NODE-1-ADDRESS"
+  "PVE-NODE-2" = "PVE-NODE-2-ADDRESS"
+}
+
+proxmox_ssh_user             = "SSH-USER"
+proxmox_ssh_private_key_file = "~/.ssh/PRIVATE-KEY"
+
+network_bridge = "BRIDGE"
+vlan_id        = 0
+gateway        = "GATEWAY-ADDRESS"
+nameservers    = ["RESOLVER-ADDRESS"]
+search_domain  = "EXAMPLE-DOMAIN"
+
+nodes = {
+  "CLUSTER-srv-0" = { vmid = 0, pve_node = "PVE-NODE-0", datastore = "DATASTORE-0", ip_cidr = "GUEST-0-ADDRESS/24" }
+  "CLUSTER-srv-1" = { vmid = 0, pve_node = "PVE-NODE-1", datastore = "DATASTORE-1", ip_cidr = "GUEST-1-ADDRESS/24" }
+  "CLUSTER-srv-2" = { vmid = 0, pve_node = "PVE-NODE-2", datastore = "DATASTORE-2", ip_cidr = "GUEST-2-ADDRESS/24" }
+}
