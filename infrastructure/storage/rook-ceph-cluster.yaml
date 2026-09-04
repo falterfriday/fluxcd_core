@@ -36,6 +36,10 @@ spec:
     toolbox:
       enabled: true
     cephClusterSpec:
+      security:
+        cephx:
+          csi:
+            keyType: aes
       dataDirHostPath: /var/lib/rook
       skipUpgradeChecks: false
       continueUpgradeAfterChecksEvenIfNotHealthy: false
