@@ -1,0 +1,87 @@
+---
+- name: Provision the core RKE2 cluster
+  hosts: core
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Wait for SSH to settle after first boot
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Install baseline packages
+      ansible.builtin.apt:
+        name:
+          - qemu-guest-agent
+          - nfs-common
+          - open-iscsi
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Confirm the guest agent unit is installed
+      ansible.builtin.assert:
+        that:
+          - "'qemu-guest-agent.service' in ansible_facts.services"
+        fail_msg: "qemu-guest-agent is not installed on {{ inventory_hostname }}"
+        success_msg: "qemu-guest-agent unit is present"
+
+    - name: Load kernel modules required by Rook-Ceph
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+        persistent: present
+      loop: "{{ core_kernel_modules }}"
+
+    - name: Inspect the OSD device
+      ansible.builtin.command: >-
+        lsblk -ndo NAME,SIZE,FSTYPE,MOUNTPOINT {{ core_osd_device }}
+      register: osd_device
+      changed_when: false
+
+    - name: Fail if the OSD device is not raw
+      ansible.builtin.assert:
+        that:
+          - osd_device.stdout.split() | length == 2
+        fail_msg: >-
+          {{ core_osd_device }} on {{ inventory_hostname }} is not raw
+          ({{ osd_device.stdout }}). Rook-Ceph would zap it.
+        success_msg: "{{ core_osd_device }} is raw and available for an OSD"
+
+    - name: Disable swap at runtime
+      ansible.builtin.command: swapoff -a
+      when: ansible_swaptotal_mb | default(0) > 0
+      changed_when: true
+
+    - name: Comment swap entries out of fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^(?!#)(.*\sswap\s.*)$'
+        replace: '# \1'
+
+  roles:
+    - role: lablabs.rke2
+
+- name: Report cluster state
+  hosts: core_servers[0]
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Wait for all nodes to register
+      ansible.builtin.command: >-
+        /var/lib/rancher/rke2/bin/kubectl
+        --kubeconfig /etc/rancher/rke2/rke2.yaml
+        get nodes -o wide
+      register: nodes
+      changed_when: false
+      retries: 30
+      delay: 10
+      until: nodes.stdout_lines | length > (groups['core_servers'] | length)
+
+    - name: Show nodes
+      ansible.builtin.debug:
+        var: nodes.stdout_lines

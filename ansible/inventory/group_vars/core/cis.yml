@@ -1,0 +1,56 @@
+---
+skip_reboot: true
+
+ubtu24cis_rule_1_3_1_1: false
+ubtu24cis_rule_1_3_1_2: false
+ubtu24cis_rule_1_3_1_3: false
+ubtu24cis_rule_1_3_1_4: false
+ubtu24cis_config_aide: false
+
+ubtu24cis_rule_1_1_1_6: false
+
+ubtu24cis_sudoers_exclude_nopasswd_list:
+  - "{{ ansible_user }}"
+
+ubtu24cis_rule_3_3_1: false
+
+ubtu24cis_rule_4_1_1: false
+ubtu24cis_rule_4_2_1: false
+ubtu24cis_rule_4_2_2: false
+ubtu24cis_rule_4_2_3: false
+ubtu24cis_rule_4_2_4: false
+ubtu24cis_rule_4_2_5: false
+ubtu24cis_rule_4_2_6: false
+ubtu24cis_rule_4_2_7: false
+ubtu24cis_rule_4_3_1: false
+ubtu24cis_rule_4_3_2: false
+ubtu24cis_rule_4_3_3: false
+ubtu24cis_rule_4_3_4: false
+ubtu24cis_rule_4_3_5: false
+ubtu24cis_rule_4_3_6: false
+ubtu24cis_rule_4_3_7: false
+ubtu24cis_rule_4_3_8: false
+ubtu24cis_rule_4_3_9: false
+ubtu24cis_rule_4_3_10: false
+ubtu24cis_rule_4_4_1_1: false
+ubtu24cis_rule_4_4_1_2: false
+ubtu24cis_rule_4_4_1_3: false
+ubtu24cis_rule_4_4_2_1: false
+ubtu24cis_rule_4_4_2_2: false
+ubtu24cis_rule_4_4_2_3: false
+ubtu24cis_rule_4_4_2_4: false
+ubtu24cis_rule_4_4_3_1: false
+ubtu24cis_rule_4_4_3_2: false
+ubtu24cis_rule_4_4_3_3: false
+ubtu24cis_rule_4_4_3_4: false
+
+ubtu24cis_auditd_max_log_file_action: rotate
+ubtu24cis_auditd_disk_full_action: rotate
+ubtu24cis_auditd_admin_space_left_action: syslog
+
+ubtu24cis_auditd_space_left_action: syslog
+
+ubtu24cis_rule_6_1_2_1_1: false
+ubtu24cis_rule_6_1_2_1_2: false
+ubtu24cis_rule_6_1_2_1_3: false
+ubtu24cis_rule_6_1_2_1_4: false

@@ -1,0 +1,7 @@
+[core_servers]
+core-srv-0	ansible_host=10.0.0.10	rke2_type=server
+core-srv-1	ansible_host=10.0.0.11	rke2_type=server
+core-srv-2	ansible_host=10.0.0.12	rke2_type=server
+
+[core:children]
+core_servers

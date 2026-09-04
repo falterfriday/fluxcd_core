@@ -1,0 +1,28 @@
+---
+- name: Apply CIS hardening
+  hosts: core
+  become: true
+  gather_facts: true
+  serial: 1
+
+  pre_tasks:
+    - name: Set a recovery password on the automation account
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        password: "{{ core_sudo_password | password_hash('sha512', (inventory_hostname | hash('md5'))[:16]) }}"
+        update_password: always
+      no_log: true
+
+  roles:
+    - role: UBUNTU24-CIS
+
+  post_tasks:
+    - name: Clear failed units left by removed packages
+      ansible.builtin.command: systemctl reset-failed
+      changed_when: false
+
+    - name: Confirm the system is not degraded
+      ansible.builtin.command: systemctl is-system-running
+      register: system_state
+      changed_when: false
+      failed_when: system_state.stdout not in ["running", "starting"]
