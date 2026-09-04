@@ -21,6 +21,38 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: infra-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: repositories
+    - name: infra-base
+    - name: infra-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./infrastructure/config
+  prune: true
+  wait: true
+  patches:
+    - target:
+        kind: IPAddressPool
+        group: metallb.io
+        name: ip-address-pool
+      patch: |
+        - op: add
+          path: /spec
+          value:
+            addresses:
+            - "10.130.0.200/29"
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: infra-operators
   namespace: flux-system
 spec:
