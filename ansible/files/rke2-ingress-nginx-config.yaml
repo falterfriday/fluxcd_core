@@ -1,0 +1,28 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-ingress-nginx
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    controller:
+      config:
+        use-forwarded-headers: "true"
+        enable-real-ip: "true"
+      publishService:
+        enabled: true
+      service:
+        enabled: true
+        type: LoadBalancer
+        external:
+          enabled: true
+        externalTrafficPolicy: Local
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: "{{ core_ingress_lb_ip }}"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi

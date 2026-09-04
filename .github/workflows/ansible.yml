@@ -1,0 +1,55 @@
+name: ansible
+
+on:
+  pull_request:
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install tooling
+        run: pip install --disable-pip-version-check ansible-core ansible-lint yamllint
+
+      - name: Install roles and collections
+        run: ansible-galaxy install -r requirements.yml
+
+      - name: Seed Terraform-generated files
+        run: |
+          cp inventory/core.ini.example inventory/core.ini
+          cp inventory/group_vars/core/generated.yml.example \
+             inventory/group_vars/core/generated.yml
+
+      - name: Lint YAML
+        run: yamllint .
+
+      - name: Lint Ansible
+        run: ansible-lint playbooks/ inventory/
+
+      - name: Syntax check
+        run: |
+          ansible-playbook --syntax-check playbooks/core-cluster.yml
+          ansible-playbook --syntax-check playbooks/harden.yml
+
+      - name: Inventory parses
+        run: ansible-inventory --list > /dev/null

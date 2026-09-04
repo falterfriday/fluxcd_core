@@ -1,0 +1,6 @@
+---
+ansible_user: SSH-USER
+core_api_hostname: api.example.test
+core_ingress_lb_ip: 10.0.0.100
+core_osd_device: /dev/disk/by-id/DEVICE-ID
+core_sudo_password: EXAMPLE-NOT-A-REAL-PASSWORD

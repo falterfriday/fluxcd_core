@@ -1,0 +1,3 @@
+.ansible/
+inventory/core.ini
+inventory/group_vars/core/generated.yml

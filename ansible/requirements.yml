@@ -1,0 +1,15 @@
+---
+roles:
+  - name: lablabs.rke2
+    version: "1.33.1"
+
+  - name: UBUNTU24-CIS
+    src: https://github.com/ansible-lockdown/UBUNTU24-CIS.git
+    scm: git
+    version: "1.5.0"
+
+collections:
+  - name: community.general
+    version: ">=10.5.0"
+  - name: ansible.posix
+    version: ">=1.6.2"
