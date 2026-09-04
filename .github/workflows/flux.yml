@@ -5,6 +5,8 @@ on:
   pull_request:
     paths:
       - 'clusters/**'
+      - 'repositories/**'
+      - 'infrastructure/**'
       - 'bootstrap/**'
       - '.sops.yaml'
       - '.yamllint.yaml'
@@ -14,6 +16,8 @@ on:
     branches: [main]
     paths:
       - 'clusters/**'
+      - 'repositories/**'
+      - 'infrastructure/**'
       - 'bootstrap/**'
       - '.sops.yaml'
       - '.yamllint.yaml'
@@ -74,7 +78,7 @@ jobs:
         run: pip install --disable-pip-version-check yamllint
 
       - name: Lint Flux manifests
-        run: yamllint -f github -c .yamllint.yaml clusters/ bootstrap/
+        run: yamllint -f github -c .yamllint.yaml clusters/ repositories/ infrastructure/ bootstrap/
 
   manifests:
     name: build and schema-validate
