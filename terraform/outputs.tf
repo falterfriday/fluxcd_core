@@ -1,29 +1,28 @@
 output "nodes" {
-  description = "Guest placement and addressing for x-checking against the Ansible inventory"
+  description = "Guest placement and addressing, read back from the managed VMs rather than from input variables."
   value = {
-    for name, cfg in var.nodes : name => {
-      vmid       = cfg.vmid
-      pve_node   = cfg.pve_node
-      ip         = split("/", cfg.ip_cidr)[0]
-      datastore  = cfg.datastore
-      vcpu       = var.vcpu
-      memory_gib = var.memory_mib / 1024
+    for name, vm in proxmox_virtual_environment_vm.core : name => {
+      vmid       = vm.vm_id
+      pve_node   = vm.node_name
+      ip         = local.guest_ips[name]
+      datastore  = vm.initialization[0].datastore_id
+      vcpu       = vm.cpu[0].cores
+      memory_gib = vm.memory[0].dedicated / 1024
     }
   }
 }
 
 output "ansible_inventory" {
-  description = "Paste into /etc/ansible/hosts"
-  value = join("\n", concat(
-    ["[${var.cluster_name}_servers]"],
-    [for name, cfg in var.nodes :
-      format("%s\tansible_host=%s\trke2_type=server", name, split("/", cfg.ip_cidr)[0])
-    ],
-    ["", "[${var.cluster_name}:children]", "${var.cluster_name}_servers"],
-  ))
+  description = "Generated inventory. Written to var.ansible_inventory_path on apply; this output is for inspection."
+  value       = local.ansible_inventory
+}
+
+output "ansible_inventory_path" {
+  description = "Path of the generated inventory file."
+  value       = local_file.ansible_inventory.filename
 }
 
 output "osd_devices" {
   description = "Stable by-id paths Rook-Ceph will claim. Must be empty before the CephCluster is applied."
-  value       = { for name, _ in var.nodes : name => local.osd_device }
+  value       = { for name, _ in proxmox_virtual_environment_vm.core : name => local.osd_device }
 }

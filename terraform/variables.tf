@@ -87,6 +87,11 @@ variable "network_bridge" {
 variable "vlan_id" {
   description = "Guest VLAN"
   type        = number
+
+  validation {
+    condition     = var.vlan_id >= 1 && var.vlan_id <= 4094
+    error_message = "vlan_id must be 1-4094. 0 is untagged, which puts guests on the bridge native VLAN alongside the hypervisors."
+  }
 }
 
 variable "gateway" {
@@ -138,6 +143,12 @@ variable "nodes" {
     condition     = alltrue([for n in var.nodes : contains(keys(var.pve_hosts), n.pve_node)])
     error_message = "Every nodes[*].pve_node must have a matching entry in pve_hosts"
   }
+}
+
+variable "ansible_inventory_path" {
+  description = "Where the generated Ansible inventory is written. Point at the Ansible repo to consume it directly."
+  type        = string
+  default     = "inventory/core.ini"
 }
 
 variable "qemu_agent_enabled" {

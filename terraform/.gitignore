@@ -9,3 +9,4 @@ crash.log
 crash.*.log
 tfplan
 *.tfplan
+inventory/
