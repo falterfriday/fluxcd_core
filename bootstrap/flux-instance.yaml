@@ -1,0 +1,30 @@
+---
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+spec:
+  distribution:
+    registry: ghcr.io/fluxcd
+    version: 2.x
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+    - image-reflector-controller
+    - image-automation-controller
+  cluster:
+    domain: cluster.local
+    multitenant: false
+    networkPolicy: true
+    size: medium
+    type: kubernetes
+  sync:
+    kind: GitRepository
+    url: https://github.com/falterfriday/fluxcd_core.git
+    ref: refs/heads/main
+    path: clusters/core
+    pullSecret: gh-token-auth
+    interval: 1m
