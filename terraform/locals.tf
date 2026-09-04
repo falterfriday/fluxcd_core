@@ -19,6 +19,14 @@ locals {
     ["", "[${var.cluster_name}:children]", "${var.cluster_name}_servers", ""],
   ))
 
+  ansible_group_vars = {
+    ansible_user       = var.guest_username
+    core_api_hostname  = var.api_hostname
+    core_sudo_password = var.guest_sudo_password
+    core_ingress_lb_ip = var.ingress_lb_ip
+    core_osd_device    = local.osd_device
+  }
+
   osd_interface = "scsi1"
   osd_device    = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-${local.osd_interface}"
 }

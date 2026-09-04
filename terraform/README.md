@@ -151,10 +151,28 @@ Order matters, and getting it wrong costs you access to the guests:
 Modifying a NIC needs `SDN.Use` on the bridge path — creating one does not, so
 this only surfaces the first time the firewall flag is flipped.
 
+## Generated files
+
+Two files are written into `../ansible/` on apply, and are gitignored there:
+
+```
+ansible/inventory/core.ini                       # hosts and addresses
+ansible/inventory/group_vars/core/generated.yml  # ansible_user, api hostname,
+                                                 # ingress LB IP, OSD device
+```
+
+This makes Terraform the single source of truth for topology and keeps the
+Ansible tree free of addresses. `terraform apply` must therefore run before any
+Ansible run, even when no infrastructure has changed.
+
 ## Known constraints
 
-- **State is not encrypted at rest.** `encrypt = true` fails — RustFS needs
-  `RUSTFS_SSE_S3_MASTER_KEY` configured server-side first.
+- **Version history retention is unverified.** A lifecycle policy expiring
+  noncurrent state versions is applied to the bucket, but RustFS accepting the
+  config is not proof it runs the rule. A canary object with 8 versions was left
+  in the bucket to check on 2026-09-11; if it has not trimmed to 6, purge old
+  versions manually. `NewerNoncurrentVersions` is likely ignored entirely —
+  RustFS rejects it without `NoncurrentDays`.
 - **One keypair spans two trust tiers.** The key the provider uses for
   hypervisor SSH also authorises the designated user inside every guest. Rotating
   either rotates both; splitting them needs the Ansible side coordinated.

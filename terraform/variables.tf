@@ -1,7 +1,29 @@
 variable "ansible_inventory_path" {
-  description = "Where the generated Ansible inventory is written. Point at the Ansible repo to consume it directly"
+  description = "Where the generated Ansible inventory is written"
   type        = string
-  default     = "inventory/core.ini"
+  default     = "../ansible/inventory/core.ini"
+}
+
+variable "ansible_group_vars_path" {
+  description = "Where the generated Ansible group_vars fragment is written"
+  type        = string
+  default     = "../ansible/inventory/group_vars/core/generated.yml"
+}
+
+variable "api_hostname" {
+  description = "DNS name added to the Kubernetes API certificate SANs"
+  type        = string
+}
+
+variable "guest_sudo_password" {
+  description = "Recovery password for the guest login account. Required by CIS 5.2.4 preflight; the account keeps NOPASSWD sudo via the role's exclusion list."
+  type        = string
+  sensitive   = true
+}
+
+variable "ingress_lb_ip" {
+  description = "MetalLB address published by ingress-nginx"
+  type        = string
 }
 
 variable "cluster_name" {
