@@ -131,7 +131,15 @@ echo 'var.firewall_enabled' | terraform console     # -> true
 Guest input policy is `DROP`. Reachable from `firewall_admin_sources`: SSH 22,
 Kubernetes API 6443, ICMP. Reachable only between the guests themselves
 (`+core-nodes` ipset): etcd 2379-2381, RKE2 supervisor 9345, kubelet 10250,
-kube-proxy 10256, Calico VXLAN 4789/udp, Typha 5473, Ceph 3300/6789/6800-7300.
+kube-proxy 10256, Calico VXLAN 4789/udp, Typha 5473, Ceph 3300/6789/6800-7300,
+Ceph mgr dashboard 8443.
+
+The mgr dashboard rule is not optional once its Ingress exists. `CephCluster`
+runs with `network.provider: host`, so the dashboard listens on a node IP rather
+than a pod IP, and ingress-nginx runs on all three nodes — two of them must
+cross the guest VLAN to reach it. Without 8443 in the ipset rules, nginx returns
+504 from two nodes out of three and appears to work only when it happens to be
+scheduled onto the active mgr's node.
 
 Calico here runs VXLAN `Always` on port **4789**, not canal's 8472. Confirm with
 `kubectl get ippools -o yaml` before changing encapsulation rules.
@@ -183,8 +191,9 @@ Ansible run, even when no infrastructure has changed.
   not re-apply it; state will report values the guest is not using.
 - **`started = true`** means an unrelated apply powers a deliberately stopped
   node back on.
-- **`ingress_sources` is empty.** Harmless while nothing uses ingress-nginx, but
-  the moment an Ingress is created, hostPorts 80/443 are dropped until it is set.
+- **`ingress_sources` gates every service exposed through ingress-nginx.** It is
+  set, not empty. Adding a consumer network is a Terraform change, not a
+  Kubernetes one.
 - **The hypervisors are not filtered.** Datacenter `input_policy` is `ACCEPT`;
   only the guests enforce. Tightening it needs node-level management rules first
   or you lose 8006 and 22 on all three hosts.

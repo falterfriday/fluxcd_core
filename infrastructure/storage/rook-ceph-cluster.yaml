@@ -95,6 +95,21 @@ spec:
       bdev_async_discard = true
       osd_pool_default_size = 3
       osd_pool_default_min_size = 2
+    ingress:
+      dashboard:
+        ingressClassName: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        host:
+          name: rook-ceph.core.stplabs.io
+          path: /
+          pathType: Prefix
+        tls:
+          - hosts:
+              - rook-ceph.core.stplabs.io
+            secretName: rook-ceph-dashboard-tls
     cephFileSystems: []
     cephObjectStores: []
     cephBlockPools:

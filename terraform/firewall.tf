@@ -114,6 +114,15 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
   rule {
     type    = "in"
     action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "8443"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "Ceph mgr dashboard, reached by ingress-nginx across nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
     proto   = "icmp"
     source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
     comment = "ICMP between cluster nodes"
