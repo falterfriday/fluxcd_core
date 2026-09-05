@@ -184,8 +184,9 @@ Ansible run, even when no infrastructure has changed.
 - **One keypair spans two trust tiers.** The key the provider uses for
   hypervisor SSH also authorises the designated user inside every guest. Rotating
   either rotates both; splitting them needs the Ansible side coordinated.
-- **Single resolver and single API endpoint.** `nameservers` has one entry, and
-  `proxmox_endpoint` names one hypervisor with no failover.
+- **Single API endpoint.** `proxmox_endpoint` names one hypervisor with no
+  failover. `nameservers` carries two entries; cert-manager depends on them
+  reaching public DNS, since egress to external resolvers on port 53 is blocked.
 - **cloud-init changes do not reach running guests.** Editing `nameservers`,
   `gateway` or `ip_cidr` rewrites the seed drive but a provisioned guest will
   not re-apply it; state will report values the guest is not using.

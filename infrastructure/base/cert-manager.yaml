@@ -33,3 +33,7 @@ spec:
       retries: 3
   values:
     installCRDs: true
+  valuesFrom:
+    - kind: Secret
+      name: cert-manager-values
+      valuesKey: values.yaml

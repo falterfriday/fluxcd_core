@@ -28,8 +28,21 @@ while IFS=$'\t' read -r name kpath file sops; do
   if [ "$sops" = "yes" ]; then
     if built="$(kustomize build "$kpath" 2>&1)"; then
       count="$(printf '%s\n' "$built" | grep -c '^sops:' || true)"
-      echo "$label built OK (${count} encrypted resources), schema check N/A"
-      skipped=$((skipped + 1))
+      plain="$(printf '%s\n' "$built" | python3 .github/scripts/strip-encrypted.py)"
+      if [ -n "$(printf '%s' "$plain" | tr -d '[:space:]')" ]; then
+        if result="$(printf '%s' "$plain" | kubeconform "${KUBECONFORM_ARGS[@]}" 2>&1)"; then
+          echo "$label $(printf '%s' "$result" | tail -n 1) [${count} encrypted skipped]"
+          checked=$((checked + 1))
+        else
+          echo "$label SCHEMA INVALID"
+          printf '%s\n' "$result" | sed 's/^/    /'
+          echo "::error file=${file},title=schema validation failed::Kustomization '${name}' renders invalid resources"
+          failed=1
+        fi
+      else
+        echo "$label built OK (${count} encrypted resources), nothing else to check"
+        skipped=$((skipped + 1))
+      fi
     else
       echo "$label BUILD FAILED"
       printf '%s\n' "$built" | sed 's/^/    /'
