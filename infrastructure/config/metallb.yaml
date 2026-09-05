@@ -4,6 +4,9 @@ kind: IPAddressPool
 metadata:
   name: ip-address-pool
   namespace: metallb-system
+spec:
+  addresses:
+    - ${METALLB_POOL_CIDR}
 
 ---
 apiVersion: metallb.io/v1beta1

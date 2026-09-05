@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: cert-manager-values
+    namespace: cert-manager
+type: Opaque
+stringData:
+    values.yaml: ENC[AES256_GCM,data:XEJBUkPF6mNESDT8UwLN8e8kBSf0lwtn2pA+Tm2MjdZH3m5xDovfK0zQ+Nr9/JaAhUZL9Qtj5Nvy7+6z8Y3mR6XCIt4qdvWre8wikX/LJSAG0xvaTJTVdj/nuPVB,iv:l70kWj68jUt6jl2Jy7F7HIL9g9HSrfdVDip37KWYtqE=,tag:bQk/KpoBqFisywB+51ZpIQ==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB5S0Z1eERKYjd3V0Y5MzJK
+            SmdrTzdNTGdsY2xha0dGZ1UxNW5uQmluMlhRCkdCOEt0ZHhhK0JnSU1WWXVZZlor
+            dUJ3WTlyMEplQVdHTVk1ays3M1JzbTgKLS0tIHZCWjJLakhPOExyV3ptaE9FV0hC
+            UGNPcFdXOGxtb2c4Mlp4V3NEMVZ1dHMKB/kChAfYAOo6zpAKsWyV9a108FvUaE9L
+            UdjWvn1cBigSPi0w/J39iM8TuDccT0sfEHodabcguc/vgkiGs+ZyHg==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-05T03:07:10Z"
+    mac: ENC[AES256_GCM,data:b/s+nYZVIVt2vqwihjNWUNlUA9YUXtwhJfzGFxgj2cn0dKeL2kWq1jDDoaBSszY+hEQoukUl/bNiXNBC8/a6Gw50C3/un7D098233VNPdFoYFAr08/HNXjIqUNX7Qmqq+9MMHr9HicmOPSc3TdMQX04QkimvU8rGWAWnibN1/0c=,iv:/Bhpz8IQagLVsNvnGH8mh2SIuL/oBCpOsyanELfRx7o=,tag:dI4xNKGT4Cz/9yEJCVD8MA==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1

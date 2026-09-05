@@ -16,6 +16,10 @@ spec:
   path: ./infrastructure/base
   prune: false
   wait: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
 
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -37,17 +41,10 @@ spec:
   path: ./infrastructure/config
   prune: true
   wait: true
-  patches:
-    - target:
-        kind: IPAddressPool
-        group: metallb.io
-        name: ip-address-pool
-      patch: |
-        - op: add
-          path: /spec
-          value:
-            addresses:
-            - "10.130.0.200/29"
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-vars
 
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
