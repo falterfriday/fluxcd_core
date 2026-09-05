@@ -12,7 +12,7 @@ spec:
   chart:
     spec:
       chart: rook-ceph-cluster
-      version: "v1.20.7"
+      version: "v1.19.11"
       sourceRef:
         kind: HelmRepository
         name: rook-release
@@ -87,6 +87,7 @@ spec:
       cleanupPolicy:
         confirmation: ""
         allowUninstallWithVolumes: false
+        wipeDevicesFromOtherClusters: false
     configOverride: |
       [global]
       mon_allow_pool_delete = true
@@ -94,9 +95,6 @@ spec:
       bdev_async_discard = true
       osd_pool_default_size = 3
       osd_pool_default_min_size = 2
-    ingress:
-      dashboard:
-        enabled: false
     cephFileSystems: []
     cephObjectStores: []
     cephBlockPools:
