@@ -40,6 +40,9 @@ spec:
         cephx:
           csi:
             keyType: aes
+            keyRotationPolicy: KeyGeneration
+            keyGeneration: 3
+            keepPriorKeyCountMax: 0
       dataDirHostPath: /var/lib/rook
       skipUpgradeChecks: false
       continueUpgradeAfterChecksEvenIfNotHealthy: false
