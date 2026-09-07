@@ -1,6 +1,7 @@
 ---
 - name: Provision the core RKE2 cluster
   hosts: core
+  serial: 1
   become: true
   gather_facts: true
 
@@ -42,14 +43,19 @@
       register: osd_device
       changed_when: false
 
-    - name: Fail if the OSD device is not raw
+    - name: Fail if the OSD device is claimed by something other than Ceph
       ansible.builtin.assert:
         that:
-          - osd_device.stdout.split() | length == 2
+          - osd_device.stdout.split() | length == 2 or
+            osd_device.stdout.split()[2] | default('') == 'ceph_bluestore'
+          - osd_device.stdout.split() | length < 4
         fail_msg: >-
-          {{ core_osd_device }} on {{ inventory_hostname }} is not raw
-          ({{ osd_device.stdout }}). Rook-Ceph would zap it.
-        success_msg: "{{ core_osd_device }} is raw and available for an OSD"
+          {{ core_osd_device }} on {{ inventory_hostname }} is neither raw nor a
+          Ceph OSD ({{ osd_device.stdout }}). Rook-Ceph would zap it.
+        success_msg: >-
+          {{ core_osd_device }} is
+          {{ 'raw and available' if osd_device.stdout.split() | length == 2
+             else 'an existing Ceph OSD' }}
 
     - name: Disable swap at runtime
       ansible.builtin.command: swapoff -a
