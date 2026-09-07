@@ -34,6 +34,8 @@ spec:
     remediation:
       retries: 3
   values:
+    monitoring:
+      enabled: true
     csi:
       rookUseCsiOperator: false
       enableRbdDriver: true

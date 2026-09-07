@@ -24,6 +24,9 @@ rke2_additional_sans: >-
 
 rke2_server_node_taints: []
 
+rke2_server_options:
+  - "etcd-expose-metrics: true"
+
 rke2_download_kubeconf: true
 rke2_download_kubeconf_file_name: core.yaml
 rke2_download_kubeconf_path: /tmp

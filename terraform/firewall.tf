@@ -123,6 +123,33 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
   rule {
     type    = "in"
     action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9100"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "node-exporter, scraped by Prometheus across nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9926"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "Ceph exporter, scraped by Prometheus across nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9283"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "Ceph mgr prometheus module, scraped by Prometheus across nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
     proto   = "icmp"
     source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
     comment = "ICMP between cluster nodes"
