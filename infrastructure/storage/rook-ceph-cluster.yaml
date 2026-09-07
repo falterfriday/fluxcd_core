@@ -31,8 +31,8 @@ spec:
       tag: v20.2.4
       allowUnsupported: false
     monitoring:
-      enabled: false
-      createPrometheusRules: false
+      enabled: true
+      createPrometheusRules: true
     toolbox:
       enabled: true
     cephClusterSpec:
@@ -58,6 +58,8 @@ spec:
       dashboard:
         enabled: true
         ssl: true
+        prometheusEndpoint: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+        prometheusEndpointSSLVerify: false
       network:
         provider: host
       storage:
@@ -76,6 +78,61 @@ spec:
         config:
           crushRoot: "default"
           storeType: bluestore
+      resources:
+        mon:
+          requests:
+            cpu: 200m
+            memory: 768Mi
+          limits:
+            memory: 1Gi
+        osd:
+          requests:
+            cpu: 500m
+            memory: 1536Mi
+          limits:
+            memory: 2560Mi
+        mgr:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            memory: 1Gi
+        mgr-sidecar:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        prepareosd:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        crashcollector:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        logcollector:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        exporter:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        cleanup:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
       priorityClassNames:
         mon: system-node-critical
         osd: system-node-critical
@@ -98,6 +155,8 @@ spec:
       bdev_async_discard = true
       osd_pool_default_size = 3
       osd_pool_default_min_size = 2
+      [osd]
+      osd_memory_target = 2147483648
     ingress:
       dashboard:
         ingressClassName: nginx
