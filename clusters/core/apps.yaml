@@ -6,6 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: infra-config
     - name: infra-storage
   interval: 1h
   retryInterval: 1m

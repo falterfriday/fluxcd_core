@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - cert-manager.yaml
   - cnpg.yaml
+  - hashicorp.yaml
   - metallb.yaml
   - prometheus-community.yaml
   - rook-release.yaml
