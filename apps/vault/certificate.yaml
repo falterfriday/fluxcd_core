@@ -1,0 +1,44 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-server-tls
+  namespace: vault
+spec:
+  secretName: vault-server-tls
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  commonName: vault.vault.svc.cluster.local
+  dnsNames:
+    - vault
+    - vault.vault
+    - vault.vault.svc
+    - vault.vault.svc.cluster.local
+    - vault-active
+    - vault-active.vault
+    - vault-active.vault.svc
+    - vault-active.vault.svc.cluster.local
+    - vault-internal
+    - vault-internal.vault
+    - vault-internal.vault.svc
+    - vault-internal.vault.svc.cluster.local
+    - vault-0.vault-internal
+    - vault-0.vault-internal.vault.svc.cluster.local
+    - vault-1.vault-internal
+    - vault-1.vault-internal.vault.svc.cluster.local
+    - vault-2.vault-internal
+    - vault-2.vault-internal.vault.svc.cluster.local
+    - localhost
+  ipAddresses:
+    - 127.0.0.1
+  issuerRef:
+    name: internal-ca-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
