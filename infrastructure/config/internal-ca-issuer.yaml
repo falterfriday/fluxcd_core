@@ -1,0 +1,41 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-cluster-issuer
+spec:
+  selfSigned: {}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: core-internal-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: core.stplabs.io internal CA
+  secretName: core-internal-ca
+  duration: 87600h
+  renewBefore: 17520h
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+    rotationPolicy: Always
+  usages:
+    - cert sign
+    - crl sign
+    - digital signature
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: internal-ca-cluster-issuer
+spec:
+  ca:
+    secretName: core-internal-ca
