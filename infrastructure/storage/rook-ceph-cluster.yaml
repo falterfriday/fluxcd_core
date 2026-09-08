@@ -43,6 +43,9 @@ spec:
             keyRotationPolicy: KeyGeneration
             keyGeneration: 3
             keepPriorKeyCountMax: 0
+      cephConfig:
+        mgr:
+          mgr/dashboard/ALERTMANAGER_API_HOST: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
       dataDirHostPath: /var/lib/rook
       skipUpgradeChecks: false
       continueUpgradeAfterChecksEvenIfNotHealthy: false
