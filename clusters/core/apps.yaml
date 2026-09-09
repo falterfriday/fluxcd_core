@@ -7,6 +7,7 @@ metadata:
 spec:
   dependsOn:
     - name: infra-config
+    - name: infra-operators
     - name: infra-storage
   interval: 1h
   retryInterval: 1m
@@ -17,3 +18,7 @@ spec:
   path: ./clusters/core/apps-overlay
   prune: false
   wait: false
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

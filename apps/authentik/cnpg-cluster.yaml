@@ -1,0 +1,71 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-db
+  namespace: authentik
+spec:
+  instances: 2
+  primaryUpdateStrategy: unsupervised
+  storage:
+    storageClass: ceph-block
+    size: 8Gi
+  walStorage:
+    storageClass: ceph-block
+    size: 4Gi
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+    parameters:
+      max_connections: "200"
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+  backup:
+    retentionPolicy: "30d"
+    target: prefer-standby
+    barmanObjectStore:
+      destinationPath: s3://cnpg-authentik/core/authentik/cnpg
+      endpointURL: https://rustfs.internal.stplabs.io
+      serverName: authentik-db
+      s3Credentials:
+        accessKeyId:
+          name: authentik-db-backup-s3-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: authentik-db-backup-s3-creds
+          key: ACCESS_SECRET_KEY
+      data:
+        compression: bzip2
+        jobs: 2
+      wal:
+        compression: bzip2
+  monitoring:
+    enablePodMonitor: true
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: authentik-db-daily
+  namespace: authentik
+spec:
+  cluster:
+    name: authentik-db
+  method: barmanObjectStore
+  backupOwnerReference: self
+  schedule: "0 0 1 * * *"
+  suspend: false

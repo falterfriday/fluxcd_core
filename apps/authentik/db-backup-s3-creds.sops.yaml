@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: authentik-db-backup-s3-creds
+    namespace: authentik
+type: Opaque
+stringData:
+    ACCESS_KEY_ID: ENC[AES256_GCM,data:CILtXOfXj5N5GW1QNmJCmS2Hq3g=,iv:AjzZkkS7QcuBvpYBbb3xfr+f/hRvNzAnh9thF4f5KHE=,tag:Ekyp19XB4fYYYkm7rGkW1Q==,type:str]
+    ACCESS_SECRET_KEY: ENC[AES256_GCM,data:kF2lz9jrzQA0VMm7zH6yCM/11doj2CQFlFoASTeCXMNva4b3Gxqg7g==,iv:pfMbRDqJa68Z4bdr/JsOWnUedGDFnu4CRMjG6ZlKAFc=,tag:wgTy6UWb3wMR4qrBpp+IKA==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBFTXJCTjYxWUlQbUtIK0dJ
+            a2I0NTJoSUlERm9NTTM0VG5VTStiWjQ4ZWtRCjh5MGV5RVNTU1ZzS2Z6VkFOMldJ
+            cXVjQjJxYlo4cmFScW1YZGZsRGMza3MKLS0tIFBaTHhVdFVhaDB5VVgraGVXeFVk
+            ZkRkRVRObkJONndTUmRPbW82TXdOTUEKC3Zdhtm525kPxHCRZA2XbWcx1z77qvjE
+            ed2kjK7WVXHmntpWK9WrdywlcHyylFBITXv44MMoESBzN9YJ2Mxb0Q==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-09T16:56:42Z"
+    mac: ENC[AES256_GCM,data:nWiamTZZCsMmOUtrbFUezTEUYn40Oh7sAFy6RWZ0zE1aEimvU/L6Y5cX3w9RoQ/dXK63QkbjXwKBd857DvlSFrigss2sN/w/TmvtCScVIVKfAag9EDNL7Y/1VGFTUiamPmNYIWcvnlNHmuXsNuQFDioUDhMPkkKIMDm2LjM34jY=,iv:3QbNnn+htWo1LI/mzjKHhk9Fx6nScOer18ufjLcyhFk=,tag:xmtkp5q0d9Ab8okyFWMCNg==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1
