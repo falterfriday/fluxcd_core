@@ -42,6 +42,24 @@ spec:
       enabled: true
       serviceMonitor:
         enabled: true
+      image:
+        repository: boky/postfix-exporter
+        tag: "latest@sha256:0a46a0c599b564f34ffc650f2cb3c108a867c1bb0b18a496d12d2d5cdcbaf6af"
+      logrotate:
+        enabled: true
+        logrotate.conf: |
+          "/var/log/mail.log" {
+              copytruncate
+              rotate 1
+              monthly
+              minsize 1M
+              compress
+              missingok
+              notifempty
+              dateext
+              olddir /var/log/
+              maxage 90
+          }
     config:
       general:
         RELAYHOST: smtp.gmail.com:587

@@ -213,6 +213,18 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
       comment = "ingress-nginx hostPort"
     }
   }
+
+  dynamic "rule" {
+    for_each = var.smtp_sources
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      proto   = "tcp"
+      dport   = "587"
+      source  = rule.value
+      comment = "SMTP relay submission"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_firewall_options" "core" {
