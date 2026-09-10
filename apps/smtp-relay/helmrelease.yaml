@@ -60,6 +60,10 @@ spec:
               olddir /var/log/
               maxage 90
           }
+    pod:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
     config:
       general:
         RELAYHOST: smtp.gmail.com:587
