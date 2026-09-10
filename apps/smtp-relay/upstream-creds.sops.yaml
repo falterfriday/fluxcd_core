@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: smtp-relay-upstream
+    namespace: smtp-relay
+type: Opaque
+stringData:
+    RELAYHOST_USERNAME: ENC[AES256_GCM,data:7UmpkTBiGJ3oTHHKeZvLvWXU,iv:ZrMRveaGy17kQ7IF6K2mxCKW6y51+7BGth8p9HdaQeo=,tag:Dn8rDFNUNAspm4DlNs6tBA==,type:str]
+    RELAYHOST_PASSWORD: ENC[AES256_GCM,data:IaGN3U0G2lX39HNYcySNiqL8dw==,iv:XpSbyiP7a/9x0h9fjzFO9Z76OBfSz9SK2QrfjdLSSKg=,tag:9PwNyuJz7TWl7Cmq6XlZSA==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQU1BjTEVPVFJRbkZhSzBO
+            b2JGN0o0U0tvVlNnZVhTYWNMQmt3TUdQTGlBClhQSkN2ZlBlYUIvVU1PK2VHRW1r
+            Y0Y5U09OTnN4L0JHREdEWlR3SDdkZUEKLS0tIFlKV29QK25sN3prOW5WSjBFSlkv
+            dnlQb1o2ZU8wV3BIdEJjbDdhRXQ5Q2sKhhc7W+6jOxI3JdAQ2eau9j867VVQB6E7
+            NSzcPzp9v4qxGyBjZBneoGTq1h0Wwzlv1+sjEza29BhBHPOC1hTECw==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-10T20:19:47Z"
+    mac: ENC[AES256_GCM,data:dzybT85thffhBF29ls+QZoLTeXaiCpU8w79G5PTchRJ4TOhzSVDrFWi9sjTm0wgWV6JYZ4cQ2CWcYUflDC8vQJ4thq2qGSNvrWBEy+GrK1dJRvrWltffctqkXfiHyzDjqm6wHIr96aVWJk1xHAPFjqdGc76hmvNXb4o1h7tMVf4=,iv:AtvNyShpBsFuHI9SnAdF0G+DLvq7mIiZY6ISPp9Op5M=,tag:8Bdz6/ggaz22/Jtfn9w6aA==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1

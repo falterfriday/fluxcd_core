@@ -1,0 +1,91 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: smtp-relay
+  namespace: smtp-relay
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: mail
+      version: "v5.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: bokysan
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 2
+    existingSecret: smtp-relay-upstream
+    service:
+      type: ClusterIP
+      port: 587
+    persistence:
+      enabled: true
+      storageClass: ceph-block
+      size: 1Gi
+      accessMode: ReadWriteOnce
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    config:
+      general:
+        RELAYHOST: smtp.gmail.com:587
+        ALLOWED_SENDER_DOMAINS: stplabs.io
+        LOG_FORMAT: json
+      postfix:
+        smtp_tls_security_level: encrypt
+        smtp_tls_mandatory_protocols: ">=TLSv1.2"
+        smtpd_tls_security_level: may
+        mynetworks: >-
+          127.0.0.0/8
+          10.42.0.0/16
+          10.43.0.0/16
+          10.120.0.0/24
+          10.120.1.0/24
+          10.130.0.0/24
+        smtpd_recipient_restrictions: >-
+          permit_mynetworks
+          reject_unauth_destination
+        message_size_limit: "20971520"
+        smtpd_client_connection_rate_limit: "60"
+        maximal_queue_lifetime: 1d
+        bounce_queue_lifetime: 1d
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-relay-external
+  namespace: smtp-relay
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 10.130.0.201
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges:
+    - 10.120.0.0/24
+    - 10.120.1.0/24
+    - 10.130.0.0/24
+  selector:
+    app.kubernetes.io/name: mail
+    app.kubernetes.io/instance: smtp-relay
+  ports:
+    - name: submission
+      port: 587
+      targetPort: 587
+      protocol: TCP
