@@ -201,3 +201,9 @@ variable "vlan_id" {
     error_message = "vlan_id must be 1-4094. 0 is untagged, which puts guests on the bridge native VLAN alongside the hypervisors"
   }
 }
+
+variable "smtp_sources" {
+  description = "CIDRs allowed to reach the SMTP relay on 587. Must match the Service loadBalancerSourceRanges in apps/smtp-relay"
+  type        = list(string)
+  default     = []
+}
