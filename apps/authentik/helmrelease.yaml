@@ -55,6 +55,13 @@ spec:
         port: 5432
       error_reporting:
         enabled: false
+      email:
+        host: smtp.core.stplabs.io
+        port: 587
+        use_tls: true
+        use_ssl: false
+        timeout: 30
+        from: "authentik <noreply@stplabs.io>"
     server:
       replicas: 2
       securityContext:

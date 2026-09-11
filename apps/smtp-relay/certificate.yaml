@@ -6,8 +6,6 @@ metadata:
   namespace: smtp-relay
 spec:
   secretName: smtp-relay-tls
-  duration: 2160h
-  renewBefore: 720h
   privateKey:
     algorithm: ECDSA
     size: 256
@@ -17,21 +15,7 @@ spec:
   commonName: smtp.core.stplabs.io
   dnsNames:
     - smtp.core.stplabs.io
-    - smtp-relay-mail
-    - smtp-relay-mail.smtp-relay
-    - smtp-relay-mail.smtp-relay.svc
-    - smtp-relay-mail.smtp-relay.svc.cluster.local
-    - smtp-relay-mail-headless
-    - smtp-relay-mail-headless.smtp-relay
-    - smtp-relay-mail-headless.smtp-relay.svc
-    - smtp-relay-mail-headless.smtp-relay.svc.cluster.local
-    - smtp-relay-external
-    - smtp-relay-external.smtp-relay
-    - smtp-relay-external.smtp-relay.svc
-    - smtp-relay-external.smtp-relay.svc.cluster.local
-  ipAddresses:
-    - 10.130.0.201
   issuerRef:
-    name: internal-ca-cluster-issuer
+    name: cloudflare-cluster-issuer
     kind: ClusterIssuer
     group: cert-manager.io
