@@ -104,6 +104,7 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
   loadBalancerSourceRanges:
+    - 10.42.0.0/16
     - 10.120.0.0/24
     - 10.120.1.0/24
     - 10.130.0.0/24
