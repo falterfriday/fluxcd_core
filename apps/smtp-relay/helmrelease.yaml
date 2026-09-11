@@ -24,6 +24,9 @@ spec:
   values:
     replicaCount: 2
     existingSecret: smtp-relay-upstream
+    certs:
+      create: false
+      existingSecret: smtp-relay-tls
     service:
       type: ClusterIP
       port: 587
@@ -71,6 +74,7 @@ spec:
         LOG_FORMAT: json
       postfix:
         smtp_tls_security_level: encrypt
+        smtp_address_preference: ipv4
         smtp_tls_mandatory_protocols: ">=TLSv1.2"
         smtpd_tls_security_level: may
         mynetworks: >-
