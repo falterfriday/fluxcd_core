@@ -46,6 +46,9 @@ spec:
               key: password
     postgresql:
       enabled: false
+    blueprints:
+      configMaps:
+        - authentik-blueprints
     authentik:
       log_level: info
       postgresql:
