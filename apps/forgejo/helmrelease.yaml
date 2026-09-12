@@ -101,6 +101,9 @@ spec:
           provider: openidConnect
           existingSecret: forgejo-oidc-secret
           autoDiscoverUrl: https://sso.core.stplabs.io/application/o/forgejo/.well-known/openid-configuration
+          scopes: openid profile email
+          groupClaimName: groups
+          adminGroup: platform-admins
       additionalConfigFromEnvs:
         - name: FORGEJO__database__PASSWD
           valueFrom:
