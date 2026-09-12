@@ -33,6 +33,13 @@ def fail(check: str, path: Path | str, message: str) -> None:
     rel = str(path.relative_to(REPO)) if isinstance(path, Path) else str(path)
     failures.append((check, rel, message))
 
+class TagTolerantLoader(yaml.SafeLoader):
+    """SafeLoader that ignores application-specific tags (e.g. authentik's !KeyOf)."""
+
+
+TagTolerantLoader.add_multi_constructor("!", lambda loader, suffix, node: None)
+
+
 def load_sops_rules() -> list[dict]:
     cfg = REPO / ".sops.yaml"
     if not cfg.exists():
@@ -91,7 +98,7 @@ def main() -> int:
             fail("C5", path, "filename looks like committed key material")
 
         try:
-            docs = [d for d in yaml.safe_load_all(raw) if isinstance(d, dict)]
+            docs = [d for d in yaml.load_all(raw, Loader=TagTolerantLoader) if isinstance(d, dict)]
         except yaml.YAMLError as exc:
             fail("C0", path, f"is not parseable YAML: {exc}")
             continue
