@@ -7,6 +7,7 @@ resources:
   - db-backup-s3-creds.sops.yaml
   - blueprints-oidc.sops.yaml
   - blueprints-oidc-grafana.sops.yaml
+  - blueprints-oidc-vault.sops.yaml
   - cnpg-cluster.yaml
   - helmrelease.yaml
 configMapGenerator:
