@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 ISSUER="https://sso.core.stplabs.io/application/o/vault/"
 UI_CALLBACK="https://vault.core.stplabs.io/ui/vault/auth/oidc/oidc/callback"
@@ -7,16 +7,20 @@ CLI_CALLBACK="http://localhost:8250/oidc/callback"
 GROUP="platform-admins"
 POLICY="platform-admin"
 
-: "${VAULT_ADDR:?set VAULT_ADDR, e.g. https://vault.core.stplabs.io}"
-: "${VAULT_TOKEN:?set VAULT_TOKEN to an admin/root token}"
+: "${VAULT_ADDR:?set VAULT_ADDR}"
+: "${VAULT_TOKEN:?set VAULT_TOKEN to an admin token}"
 : "${VAULT_OIDC_CLIENT_ID:?set VAULT_OIDC_CLIENT_ID (must match the authentik blueprint)}"
 : "${VAULT_OIDC_CLIENT_SECRET:?set VAULT_OIDC_CLIENT_SECRET (must match the authentik blueprint)}"
 
-echo "==> vault status"
-vault status -format=json | python3 -c 'import json,sys; d=json.load(sys.stdin); print("    sealed=%s version=%s" % (d["sealed"], d["version"])); sys.exit(1 if d["sealed"] else 0)'
+echo "==> checking vault is reachable and unsealed"
+if ! vault status >/dev/null 2>&1; then
+  vault status || true
+  echo "ERROR: vault is sealed or unreachable" >&2
+  exit 1
+fi
 
 echo "==> enabling oidc auth method"
-if vault auth list -format=json | python3 -c 'import json,sys; sys.exit(0 if "oidc/" in json.load(sys.stdin) else 1)'; then
+if vault auth list | grep -q '^oidc/'; then
   echo "    already enabled, skipping"
 else
   vault auth enable oidc
@@ -57,43 +61,24 @@ vault write auth/oidc/role/default \
   ttl="1h"
 
 echo "==> mapping authentik group '$GROUP' to policy '$POLICY'"
-ACCESSOR=$(vault auth list -format=json | python3 -c 'import json,sys; print(json.load(sys.stdin)["oidc/"]["accessor"])')
+ACCESSOR=$(vault read -field=accessor sys/auth/oidc)
 echo "    oidc mount accessor: $ACCESSOR"
 
-if vault read -format=json "identity/group/name/$GROUP" >/dev/null 2>&1; then
+if vault read "identity/group/name/$GROUP" >/dev/null 2>&1; then
   echo "    identity group exists, updating policies"
-  vault write "identity/group/name/$GROUP" type="external" policies="$POLICY"
+  vault write "identity/group/name/$GROUP" type="external" policies="$POLICY" >/dev/null
 else
-  vault write identity/group name="$GROUP" type="external" policies="$POLICY"
+  vault write identity/group name="$GROUP" type="external" policies="$POLICY" >/dev/null
 fi
 CANONICAL_ID=$(vault read -field=id "identity/group/name/$GROUP")
+echo "    identity group id: $CANONICAL_ID"
 
-ALIAS_ID=$(vault list -format=json identity/group-alias/id 2>/dev/null | python3 -c '
-import json, subprocess, sys
-try:
-    ids = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-want_name, want_accessor = sys.argv[1], sys.argv[2]
-for i in ids:
-    out = subprocess.run(["vault", "read", "-format=json", "identity/group-alias/id/" + i],
-                         capture_output=True, text=True)
-    if out.returncode:
-        continue
-    d = json.loads(out.stdout)["data"]
-    if d.get("name") == want_name and d.get("mount_accessor") == want_accessor:
-        print(i)
-        break
-' "$GROUP" "$ACCESSOR" || true)
-
-if [ -n "${ALIAS_ID:-}" ]; then
-  echo "    group-alias exists ($ALIAS_ID), updating"
-  vault write "identity/group-alias/id/$ALIAS_ID" \
-    name="$GROUP" mount_accessor="$ACCESSOR" canonical_id="$CANONICAL_ID"
+echo "    creating group-alias"
+if vault write identity/group-alias \
+     name="$GROUP" mount_accessor="$ACCESSOR" canonical_id="$CANONICAL_ID" >/dev/null 2>&1; then
+  echo "    group-alias created"
 else
-  echo "    creating group-alias"
-  vault write identity/group-alias \
-    name="$GROUP" mount_accessor="$ACCESSOR" canonical_id="$CANONICAL_ID"
+  echo "    group-alias already exists for this mount (nothing to do)"
 fi
 
 echo
