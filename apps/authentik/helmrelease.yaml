@@ -49,6 +49,8 @@ spec:
     blueprints:
       configMaps:
         - authentik-blueprints
+      secrets:
+        - authentik-blueprints-oidc
     authentik:
       log_level: info
       postgresql:

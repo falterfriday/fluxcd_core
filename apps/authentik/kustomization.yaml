@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - secrets.sops.yaml
   - db-backup-s3-creds.sops.yaml
+  - blueprints-oidc.sops.yaml
   - cnpg-cluster.yaml
   - helmrelease.yaml
 configMapGenerator:

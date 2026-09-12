@@ -166,6 +166,18 @@ entries:
     attrs:
       email: patrick@stplabs.io
   - identifiers:
+      name: platform-admins
+    id: group-platform-admins
+    model: authentik_core.group
+    attrs:
+      is_superuser: false
+  - identifiers:
+      name: platform-users
+    id: group-platform-users
+    model: authentik_core.group
+    attrs:
+      is_superuser: false
+  - identifiers:
       domain: authentik-default
       default: true
     model: authentik_brands.brand
