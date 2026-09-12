@@ -88,6 +88,24 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
     type    = "in"
     action  = "ACCEPT"
     proto   = "tcp"
+    dport   = "7946"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "MetalLB speaker memberlist"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "udp"
+    dport   = "7946"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
+    comment = "MetalLB speaker memberlist"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
     dport   = "3300"
     source  = "+${proxmox_virtual_environment_firewall_ipset.core_nodes.name}"
     comment = "Ceph mon v2"
