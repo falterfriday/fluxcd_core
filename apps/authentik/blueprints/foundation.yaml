@@ -164,7 +164,7 @@ entries:
       username: akadmin
     model: authentik_core.user
     attrs:
-      email: patrick@stplabs.io
+      email: admin@stplabs.io
   - identifiers:
       name: platform-admins
     id: group-platform-admins
