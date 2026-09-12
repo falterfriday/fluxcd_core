@@ -153,6 +153,12 @@ spec:
     grafana:
       enabled: true
       defaultDashboardsTimezone: browser
+      admin:
+        existingSecret: grafana-admin
+        userKey: admin-user
+        passwordKey: admin-password
+      deploymentStrategy:
+        type: Recreate
       ingress:
         enabled: false
       persistence:
