@@ -51,6 +51,7 @@ spec:
         - authentik-blueprints
       secrets:
         - authentik-blueprints-oidc
+        - authentik-blueprints-oidc-grafana
     authentik:
       log_level: info
       postgresql:

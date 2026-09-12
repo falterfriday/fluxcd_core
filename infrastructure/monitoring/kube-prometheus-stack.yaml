@@ -159,6 +159,7 @@ spec:
         passwordKey: admin-password
       deploymentStrategy:
         type: Recreate
+      envFromSecret: grafana-oidc
       ingress:
         enabled: false
       persistence:
@@ -180,6 +181,23 @@ spec:
         analytics:
           reporting_enabled: false
           check_for_updates: false
+        auth.generic_oauth:
+          enabled: true
+          name: Authentik
+          icon: signin
+          allow_sign_up: true
+          auto_login: false
+          use_pkce: true
+          scopes: openid profile email
+          auth_url: https://sso.core.stplabs.io/application/o/authorize/
+          token_url: https://sso.core.stplabs.io/application/o/token/
+          api_url: https://sso.core.stplabs.io/application/o/userinfo/
+          login_attribute_path: preferred_username
+          name_attribute_path: name
+          email_attribute_path: email
+          role_attribute_path: "contains(groups, 'platform-admins') && 'Admin' || contains(groups, 'platform-users') && 'Viewer' || 'Viewer'"
+          role_attribute_strict: false
+          signout_redirect_url: https://sso.core.stplabs.io/application/o/grafana/end-session/
 
 ---
 apiVersion: networking.k8s.io/v1
