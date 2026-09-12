@@ -97,7 +97,7 @@ spec:
         serviceMonitor:
           enabled: true
       oauth:
-        - name: authentik
+        - name: Authentik
           provider: openidConnect
           existingSecret: forgejo-oidc-secret
           autoDiscoverUrl: https://sso.core.stplabs.io/application/o/forgejo/.well-known/openid-configuration
@@ -138,7 +138,7 @@ spec:
           ENABLE_NOTIFY_MAIL: true
         oauth2_client:
           ENABLE_AUTO_REGISTRATION: true
-          USERNAME: preferred_username
+          USERNAME: nickname
           ACCOUNT_LINKING: auto
           UPDATE_AVATAR: false
           REGISTER_EMAIL_CONFIRM: false
