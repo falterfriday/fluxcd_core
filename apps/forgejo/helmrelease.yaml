@@ -120,7 +120,7 @@ spec:
           SSH_PORT: 2222
           SSH_LISTEN_PORT: 2222
           START_SSH_SERVER: true
-          LANDING_PAGE: explore
+          LANDING_PAGE: login
         database:
           DB_TYPE: postgres
           HOST: forgejo-db-rw:5432
@@ -135,6 +135,7 @@ spec:
           FROM: "STP Labs Forge <forgejo@stplabs.io>"
         service:
           DISABLE_REGISTRATION: true
+          REQUIRE_SIGNIN_VIEW: true
           ENABLE_NOTIFY_MAIL: true
         oauth2_client:
           ENABLE_AUTO_REGISTRATION: true
@@ -151,6 +152,8 @@ spec:
           ADAPTER: memory
         repository:
           DEFAULT_BRANCH: main
+        indexer:
+          REPO_INDEXER_ENABLED: true
         actions:
           ENABLED: false
         log:
