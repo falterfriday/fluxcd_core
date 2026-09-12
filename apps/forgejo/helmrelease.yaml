@@ -1,0 +1,143 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: forgejo
+  namespace: forgejo
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: forgejo
+      version: "17.1.6"
+      sourceRef:
+        kind: HelmRepository
+        name: forgejo
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+    strategy:
+      type: Recreate
+    image:
+      rootless: true
+    podSecurityContext:
+      fsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    persistence:
+      enabled: true
+      create: true
+      mount: true
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      storageClass: ceph-block
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 1536Mi
+    service:
+      http:
+        type: ClusterIP
+        port: 3000
+      ssh:
+        type: LoadBalancer
+        port: 2222
+        externalTrafficPolicy: Local
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: 10.130.0.202
+        loadBalancerSourceRanges:
+          - 10.42.0.0/16
+          - 10.120.0.0/24
+          - 10.120.1.0/24
+          - 10.130.0.0/24
+    ingress:
+      enabled: true
+      className: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      hosts:
+        - host: git.core.stplabs.io
+          paths:
+            - path: /
+              pathType: Prefix
+              port: http
+      tls:
+        - hosts:
+            - git.core.stplabs.io
+          secretName: forgejo-tls
+    gitea:
+      admin:
+        existingSecret: forgejo-admin-secret
+        passwordMode: keepUpdated
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      additionalConfigFromEnvs:
+        - name: FORGEJO__database__PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-db-app
+              key: password
+      config:
+        APP_NAME: STP Labs Forge
+        RUN_MODE: prod
+        server:
+          DOMAIN: git.core.stplabs.io
+          ROOT_URL: https://git.core.stplabs.io/
+          SSH_DOMAIN: git.core.stplabs.io
+          SSH_PORT: 2222
+          SSH_LISTEN_PORT: 2222
+          START_SSH_SERVER: true
+          LANDING_PAGE: explore
+        database:
+          DB_TYPE: postgres
+          HOST: forgejo-db-rw:5432
+          NAME: forgejo
+          USER: forgejo
+          SSL_MODE: require
+        mailer:
+          ENABLED: true
+          PROTOCOL: smtp+starttls
+          SMTP_ADDR: smtp.core.stplabs.io
+          SMTP_PORT: 587
+          FROM: "STP Labs Forge <forgejo@stplabs.io>"
+        service:
+          DISABLE_REGISTRATION: true
+          ENABLE_NOTIFY_MAIL: true
+        security:
+          INSTALL_LOCK: true
+        session:
+          PROVIDER: db
+          COOKIE_SECURE: true
+        cache:
+          ADAPTER: memory
+        repository:
+          DEFAULT_BRANCH: main
+        actions:
+          ENABLED: false
+        log:
+          LEVEL: info

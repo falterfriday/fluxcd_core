@@ -1,28 +1,17 @@
-variable "ansible_inventory_path" {
-  description = "Where the generated Ansible inventory is written"
-  type        = string
-  default     = "../ansible/inventory/core.ini"
-}
-
 variable "ansible_group_vars_path" {
   description = "Where the generated Ansible group_vars fragment is written"
   type        = string
   default     = "../ansible/inventory/group_vars/core/generated.yml"
 }
 
+variable "ansible_inventory_path" {
+  description = "Where the generated Ansible inventory is written"
+  type        = string
+  default     = "../ansible/inventory/core.ini"
+}
+
 variable "api_hostname" {
   description = "DNS name added to the Kubernetes API certificate SANs"
-  type        = string
-}
-
-variable "guest_sudo_password" {
-  description = "Recovery password for the guest login account. Required by CIS 5.2.4 preflight; the account keeps NOPASSWD sudo via the role's exclusion list."
-  type        = string
-  sensitive   = true
-}
-
-variable "ingress_lb_ip" {
-  description = "MetalLB address published by ingress-nginx"
   type        = string
 }
 
@@ -44,13 +33,30 @@ variable "firewall_enabled" {
   default     = false
 }
 
+variable "forgejo_ssh_sources" {
+  description = "CIDRs allowed to reach Forgejo git-over-SSH on 2222. Must match the Service loadBalancerSourceRanges in apps/forgejo. Deliberately not port 22, which stays restricted to firewall_admin_sources for the node sshd"
+  type        = list(string)
+  default     = []
+}
+
 variable "gateway" {
   description = "Default gateway on the guest VLAN"
   type        = string
 }
 
+variable "guest_sudo_password" {
+  description = "Recovery password for the guest login account. Required by CIS 5.2.4 preflight; the account keeps NOPASSWD sudo via the role's exclusion list."
+  type        = string
+  sensitive   = true
+}
+
 variable "guest_username" {
   description = "Login account created in each guest by cloud-init."
+  type        = string
+}
+
+variable "ingress_lb_ip" {
+  description = "MetalLB address published by ingress-nginx"
   type        = string
 }
 
@@ -168,6 +174,12 @@ variable "search_domain" {
   type        = string
 }
 
+variable "smtp_sources" {
+  description = "CIDRs allowed to reach the SMTP relay on 587. Must match the Service loadBalancerSourceRanges in apps/smtp-relay"
+  type        = list(string)
+  default     = []
+}
+
 variable "ssh_public_keys" {
   description = "Authorised keys for the guest login account"
   type        = list(string)
@@ -200,10 +212,4 @@ variable "vlan_id" {
     condition     = var.vlan_id >= 1 && var.vlan_id <= 4094
     error_message = "vlan_id must be 1-4094. 0 is untagged, which puts guests on the bridge native VLAN alongside the hypervisors"
   }
-}
-
-variable "smtp_sources" {
-  description = "CIDRs allowed to reach the SMTP relay on 587. Must match the Service loadBalancerSourceRanges in apps/smtp-relay"
-  type        = list(string)
-  default     = []
 }

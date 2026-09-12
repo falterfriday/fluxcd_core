@@ -243,6 +243,18 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "core" {
       comment = "SMTP relay submission"
     }
   }
+
+  dynamic "rule" {
+    for_each = var.forgejo_ssh_sources
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      proto   = "tcp"
+      dport   = "2222"
+      source  = rule.value
+      comment = "Forgejo git SSH"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_firewall_options" "core" {

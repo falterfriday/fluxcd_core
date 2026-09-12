@@ -6,6 +6,7 @@ resources:
   - bokysan.yaml
   - cert-manager.yaml
   - cnpg.yaml
+  - forgejo.yaml
   - hashicorp.yaml
   - metallb.yaml
   - prometheus-community.yaml

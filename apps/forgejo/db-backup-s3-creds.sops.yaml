@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: forgejo-db-backup-s3-creds
+    namespace: forgejo
+type: Opaque
+stringData:
+    ACCESS_KEY_ID: ENC[AES256_GCM,data:2IX5QQFG6pO2EZ+QP9NrRVbnrQw=,iv:W6MowMTiFs8WIS+WNCdwxsP+logG10aRjSYr9UTgxek=,tag:aghmuttVGUczpVutL+rtsQ==,type:str]
+    ACCESS_SECRET_KEY: ENC[AES256_GCM,data:+Zj4qkRFKRVTnPxlLOSRwtKASn/AT2cZv8gPLeHaQgjta7auQ0lsAA==,iv:Z5OiEJikYy25t6bq2Jls6s794HrTuwC7+VHc09nweFo=,tag:T5Rl3FKZLajHluCgXQBmYw==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBYUmkyM2tjNEhNaFYxMjFo
+            L0JTdE9qQXNzalVTY0FhZzBDbkN3NEVhUENRCkNacWowdzBiMCtYOG9kOHowbVAv
+            NjhMZU5lWFRveXFaaVdVaVdXN1RzWkUKLS0tIG5wOUFVZEtGWGN2Y29mVUsxMEgz
+            aFNDZEQzbm0rRms4RllmM2Y5Q3ZJZTAKhP4JTV4esXaH8jE2QLvtj19QJUdz144A
+            R1JaorYQI+n+j2xJIqXnxNnl9GXJUx6UrObVnGl+lvZvj2H1IGavvg==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-12T01:08:02Z"
+    mac: ENC[AES256_GCM,data:PvfuMa2xNtFz1ghvC7sMsXkaC1hg9cZyaPZ7/ECFrhegvYBdZIlcHqK6NpI4LRhMwZubsl/06aeaqqG5h6NYHahAJ/GGWLACu7mPjyqoSNZRD4nexvAs8xetjSJ1zGugLZ6kg76h2LgkeVxxxMUR0m/0GajiUKFrhLkanX1Y6XU=,iv:IvYVLq3QlD0/h7U5Ra3SScsE9qxGbsmi16ksJmbboR8=,tag:BDJzazS3u5/tOONGksID9A==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1
