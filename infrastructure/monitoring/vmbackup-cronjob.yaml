@@ -1,0 +1,67 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vmbackup
+  namespace: monitoring
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app: server
+                      app.kubernetes.io/instance: victoriametrics
+                      app.kubernetes.io/name: victoria-metrics-single
+          containers:
+            - name: vmbackup
+              image: victoriametrics/vmbackup:v1.151.0
+              args:
+                - -storageDataPath=/storage
+                - -snapshot.createURL=http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428/snapshot/create
+                - -dst=fs:///backup/core
+                - -loggerFormat=json
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 1Gi
+              volumeMounts:
+                - name: server-volume
+                  mountPath: /storage
+                  readOnly: true
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: server-volume
+              persistentVolumeClaim:
+                claimName: server-volume-victoriametrics-victoria-metrics-single-server-0
+            - name: backup
+              nfs:
+                server: 10.130.0.6
+                path: /mnt/pool_hdd_2/backup_victoriametrics

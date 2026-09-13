@@ -11,3 +11,4 @@ resources:
   - metallb.yaml
   - prometheus-community.yaml
   - rook-release.yaml
+  - victoriametrics.yaml
