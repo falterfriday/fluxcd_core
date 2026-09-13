@@ -71,7 +71,7 @@ spec:
         retentionSize: 17GB
         scrapeInterval: 30s
         externalLabels:
-          cluster: core
+          k8s_cluster: core
         remoteWrite:
           - url: http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428/api/v1/write
             name: victoriametrics
