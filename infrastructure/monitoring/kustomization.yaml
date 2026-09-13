@@ -8,3 +8,5 @@ resources:
   - kube-prometheus-stack.yaml
   - victoriametrics.yaml
   - vmbackup-cronjob.yaml
+  - vm-write-auth.sops.yaml
+  - vm-write-ingress.yaml
