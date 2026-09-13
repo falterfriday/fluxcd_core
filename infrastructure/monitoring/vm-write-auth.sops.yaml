@@ -5,7 +5,7 @@ metadata:
     namespace: monitoring
 type: Opaque
 stringData:
-    auth: ENC[AES256_GCM,data:+IC2QCH8P3gI6b9dwWAh6d+R9Sq6PjBvxpVVSkCtVE7tqZxDyo1OIiTf,iv:8MvKX73K+lHoSmtKlj628S2HQP8TIkS/4Gy4YT4FpDg=,tag:oTdjxQ/yxcJRdmOyeZ5JHA==,type:str]
+    auth: ENC[AES256_GCM,data:d9MWwsHn0NRTFupsIOKOvYb1yxTWoiVfirRlSkZoey/EbfLp6bD9/wCTVtk1mdgKqyVoY79tNXBy32SF3lbmKl1oMACNYeXEPMw=,iv:QwjWhVENbvie+48bRnMaY5Wbzyb8rhpHKEa4YGzRP+k=,tag:qlqANJT9rD+EO+CJoKCcNQ==,type:str]
 sops:
     age:
         - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
@@ -17,7 +17,7 @@ sops:
             NHRuNEU2SFFuZmNDcDBKeCtXV1czTU0KRg2O3yj+qBadSp0H7kpWr9cn4F+pofiv
             f1ivLbv8fbDXLUzPRhtLrnyyjGxB5cY066hJxh3vhPsfl+418RMF+Q==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-09-13T22:07:22Z"
-    mac: ENC[AES256_GCM,data:yFaEalTP2nNEHJNd898kCml3fVYmA7BgwvSWADis3tBo2UwsxHACv+2gDZKmj9ZkpFgWFguzQc/X+YygNJFKCv3Ng+HNNh5dznBqr7ehxT3AELy9pMUqs1CW/v3Ft3VZLwgW5X3PWMzrcOsm4j3SDifeVPLq44HFDPSgstSzfgw=,iv:dcmEqPd9qTOisU7cj8CK776RTeWU4PEJxzlUy7HGXdQ=,tag:9P2N8f/VfTfpewG/O8krIA==,type:str]
+    lastmodified: "2026-09-13T23:18:38Z"
+    mac: ENC[AES256_GCM,data:KHc1CNI5dMR4kcL1BRTJI3tzq3rS9xwr1SgZHZhcB9jDsD1idOiX6VxDZMX3Ug9C9q9lOlpytXuAZ8BKUxtzwzBgI89QHFpErunoQ8FXbmAefABRmAXL16cATJDw9lHgYY+yx9xljLL5VAqvHFlew4fHfQ0X84VQB4dlN7zLikY=,iv:pfSiHUFmuaybPnZIgr5786B1WyrpjXm05TkYE8Cqiho=,tag:zieJAEHo/VEMLxFKkWvIFQ==,type:str]
     encrypted_regex: ^(data|stringData)$
     version: 3.12.1
