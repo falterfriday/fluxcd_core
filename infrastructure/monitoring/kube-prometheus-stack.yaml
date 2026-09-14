@@ -155,6 +155,8 @@ spec:
         limits:
           memory: 128Mi
     prometheus-node-exporter:
+      tolerations:
+        - operator: Exists
       resources:
         requests:
           cpu: 25m
