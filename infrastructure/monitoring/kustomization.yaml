@@ -11,3 +11,12 @@ resources:
   - vmbackup-cronjob.yaml
   - vm-write-auth.sops.yaml
   - vm-write-ingress.yaml
+configMapGenerator:
+  - name: grafana-dashboard-cluster-overview
+    namespace: monitoring
+    files:
+      - cluster-overview.json=dashboards/cluster-overview.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"
