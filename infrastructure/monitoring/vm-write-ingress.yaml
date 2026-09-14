@@ -26,6 +26,13 @@ spec:
                 name: victoriametrics-victoria-metrics-single-server
                 port:
                   number: 8428
+          - path: /api/v2/alerts
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-alertmanager
+                port:
+                  number: 9093
   tls:
     - hosts:
         - metrics.core.stplabs.io

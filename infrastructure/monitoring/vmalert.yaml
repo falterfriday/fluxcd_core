@@ -1,0 +1,104 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vmalert
+  namespace: monitoring
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: victoria-metrics-alert
+      version: "0.48.0"
+      sourceRef:
+        kind: HelmRepository
+        name: victoriametrics
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    server:
+      datasource:
+        url: http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428
+      notifiers:
+        - url: http://kube-prometheus-stack-alertmanager.monitoring.svc:9093
+      extraArgs:
+        evaluationInterval: 60s
+        external.label: "k8s_cluster=internal"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          memory: 256Mi
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      config:
+        alerts:
+          groups:
+            - name: internal-cluster
+              interval: 60s
+              rules:
+                - alert: InternalClusterMetricsStale
+                  expr: 'time() - max(timestamp(up{k8s_cluster="internal"})) > 300'
+                  for: 5m
+                  labels:
+                    severity: critical
+                    k8s_cluster: internal
+                  annotations:
+                    summary: "internal cluster has stopped reporting metrics"
+                    description: "No metrics received from the internal cluster for over 5 minutes. The cluster may be down, or the remote-write link to core may be broken."
+                - alert: InternalNodeDown
+                  expr: 'up{k8s_cluster="internal", job="node-exporter"} == 0'
+                  for: 5m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: "Node {{ $labels.instance }} is down"
+                    description: "node-exporter on {{ $labels.instance }} has been unreachable for 5 minutes."
+                - alert: InternalNodeNotReady
+                  expr: 'kube_node_status_condition{k8s_cluster="internal", condition="Ready", status="true"} == 0'
+                  for: 10m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: "Node {{ $labels.node }} is not Ready"
+                    description: "Node {{ $labels.node }} has been NotReady for 10 minutes."
+                - alert: InternalNodeMemoryPressure
+                  expr: '(node_memory_MemAvailable_bytes{k8s_cluster="internal"} / node_memory_MemTotal_bytes{k8s_cluster="internal"}) < 0.10'
+                  for: 15m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "Node {{ $labels.instance }} is low on memory"
+                    description: "Less than 10% memory available on {{ $labels.instance }} for 15 minutes."
+                - alert: InternalNodeDiskFilling
+                  expr: '(node_filesystem_avail_bytes{k8s_cluster="internal", fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{k8s_cluster="internal", fstype!~"tmpfs|overlay"}) < 0.10'
+                  for: 15m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is nearly full"
+                    description: "Less than 10% free on {{ $labels.mountpoint }}."
+                - alert: InternalPodCrashLooping
+                  expr: 'increase(kube_pod_container_status_restarts_total{k8s_cluster="internal"}[15m]) > 3'
+                  for: 10m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+                    description: "Container {{ $labels.container }} has restarted more than 3 times in 15 minutes."
