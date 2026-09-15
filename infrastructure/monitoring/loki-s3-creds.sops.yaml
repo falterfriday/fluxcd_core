@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: loki-s3-creds
+    namespace: monitoring
+type: Opaque
+stringData:
+    LOKI_S3_ACCESS_KEY_ID: ENC[AES256_GCM,data:WzMfQklmcVqt6xjMngEiFJ4pf30=,iv:oe2gbRLHkDubqztW2y8wHK3kAW6i3aMMgWDRF+7YTj8=,tag:R5ru4P8tR6pZKNJJy0YtfQ==,type:str]
+    LOKI_S3_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:VP0yrRHqO2C8bMqnUPtVuGm7AkHU4WIpDSD3tsT3YPpncSagko4mqQ==,iv:8igJ2fLPYNVwB9OOCD25nVn3Vh5Wcq5emd0MWtmnezk=,tag:cTw4Ab/2y2aSfIEf4sjV9A==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBwcEhNRE9xSnlQdUJ1M1E0
+            emhOdnJZZFZpUVhYemJ0VUVVMTVGa0ZNZlJjCndORml0Z2Y1d2xLN3BVWHgrdVlm
+            ck9GSzhkNzg5NmcrQXl4eTczcGhqNW8KLS0tIFJDdDhCV0ErVVl6eXZyU0o1NEhu
+            T1B1Uml1L1RDSE9yNHhSeHM3NDJJNG8Kk9tUqABrQSJ5xk6HruQf4fQRmk5G6ZFg
+            6Wa8fhCn5JB95CFeC3Nsf5XneBXQMtXxPFDhwm8mzZMn2wCCQjnn1A==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-15T02:58:59Z"
+    mac: ENC[AES256_GCM,data:FujxX7YPTJzKrjRsr6mG5Wxa2ir9RtsqgJcX268ZdpkMRtZoAf7+qg5jC4RuRhguIJmrRSYeESlmpoa3r9Ad6G6FPMKkQ6VZOk8L9JR9DzKbDAbcLZW9UvYkovTKNnxATjESH01zdWLaKhJvyGr6zsI6KGrCuFMfbPGA+WE8xvw=,iv:PSa2G5RWlPFVmux37FDa6hhva2fk+ORtzbzjE4YhhkQ=,tag:TxU3oC7BwVBp/BAVcNXv6Q==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1

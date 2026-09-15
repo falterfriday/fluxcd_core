@@ -6,6 +6,8 @@ resources:
   - grafana-admin.sops.yaml
   - grafana-oidc.sops.yaml
   - kube-prometheus-stack.yaml
+  - loki-s3-creds.sops.yaml
+  - loki.yaml
   - victoriametrics.yaml
   - vmalert.yaml
   - vmbackup-cronjob.yaml
