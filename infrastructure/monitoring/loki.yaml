@@ -30,8 +30,8 @@ spec:
       storage:
         type: s3
         bucketNames:
-          chunks: loki
-          ruler: loki
+          chunks: loki-core
+          ruler: loki-core
         s3:
           endpoint: rustfs.internal.stplabs.io
           region: us-east-1
