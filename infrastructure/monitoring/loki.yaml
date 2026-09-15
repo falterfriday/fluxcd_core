@@ -41,7 +41,7 @@ spec:
           insecure: false
       schemaConfig:
         configs:
-          - from: "2026-09-15"
+          - from: "2026-09-01"
             store: tsdb
             object_store: s3
             schema: v13
