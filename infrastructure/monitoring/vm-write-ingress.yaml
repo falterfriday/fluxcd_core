@@ -16,30 +16,6 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: metrics.core.stplabs.io
-      http:
-        paths:
-          - path: /api/v1/write
-            pathType: Prefix
-            backend:
-              service:
-                name: victoriametrics-victoria-metrics-single-server
-                port:
-                  number: 8428
-          - path: /api/v2/alerts
-            pathType: Prefix
-            backend:
-              service:
-                name: kube-prometheus-stack-alertmanager
-                port:
-                  number: 9093
-          - path: /loki/api/v1/push
-            pathType: Prefix
-            backend:
-              service:
-                name: loki
-                port:
-                  number: 3100
     - host: telemetry.core.stplabs.io
       http:
         paths:
@@ -65,9 +41,6 @@ spec:
                 port:
                   number: 3100
   tls:
-    - hosts:
-        - metrics.core.stplabs.io
-      secretName: vm-write-tls
     - hosts:
         - telemetry.core.stplabs.io
       secretName: telemetry-tls
