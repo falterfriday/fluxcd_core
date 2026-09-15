@@ -1,4 +1,3 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -9,7 +8,7 @@ spec:
   chart:
     spec:
       chart: victoria-metrics-alert
-      version: "0.48.0"
+      version: 0.48.0
       sourceRef:
         kind: HelmRepository
         name: victoriametrics
@@ -26,10 +25,10 @@ spec:
       datasource:
         url: http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428
       notifiers:
-        - url: http://kube-prometheus-stack-alertmanager.monitoring.svc:9093
+      - url: http://kube-prometheus-stack-alertmanager.monitoring.svc:9093
       extraArgs:
         evaluationInterval: 60s
-        external.label: "k8s_cluster=internal"
+        external.label: k8s_cluster=internal
       resources:
         requests:
           cpu: 50m
@@ -46,59 +45,126 @@ spec:
         allowPrivilegeEscalation: false
         capabilities:
           drop:
-            - ALL
+          - ALL
       config:
         alerts:
           groups:
-            - name: internal-cluster
-              interval: 60s
-              rules:
-                - alert: InternalClusterMetricsStale
-                  expr: 'time() - max(timestamp(up{k8s_cluster="internal"})) > 300'
-                  for: 5m
-                  labels:
-                    severity: critical
-                    k8s_cluster: internal
-                  annotations:
-                    summary: "internal cluster has stopped reporting metrics"
-                    description: "No metrics received from the internal cluster for over 5 minutes. The cluster may be down, or the remote-write link to core may be broken."
-                - alert: InternalNodeDown
-                  expr: 'up{k8s_cluster="internal", job="node-exporter"} == 0'
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: "Node {{ $labels.instance }} is down"
-                    description: "node-exporter on {{ $labels.instance }} has been unreachable for 5 minutes."
-                - alert: InternalNodeNotReady
-                  expr: 'kube_node_status_condition{k8s_cluster="internal", condition="Ready", status="true"} == 0'
-                  for: 10m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: "Node {{ $labels.node }} is not Ready"
-                    description: "Node {{ $labels.node }} has been NotReady for 10 minutes."
-                - alert: InternalNodeMemoryPressure
-                  expr: '(node_memory_MemAvailable_bytes{k8s_cluster="internal"} / node_memory_MemTotal_bytes{k8s_cluster="internal"}) < 0.10'
-                  for: 15m
-                  labels:
-                    severity: warning
-                  annotations:
-                    summary: "Node {{ $labels.instance }} is low on memory"
-                    description: "Less than 10% memory available on {{ $labels.instance }} for 15 minutes."
-                - alert: InternalNodeDiskFilling
-                  expr: '(node_filesystem_avail_bytes{k8s_cluster="internal", fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{k8s_cluster="internal", fstype!~"tmpfs|overlay"}) < 0.10'
-                  for: 15m
-                  labels:
-                    severity: warning
-                  annotations:
-                    summary: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is nearly full"
-                    description: "Less than 10% free on {{ $labels.mountpoint }}."
-                - alert: InternalPodCrashLooping
-                  expr: 'increase(kube_pod_container_status_restarts_total{k8s_cluster="internal"}[15m]) > 3'
-                  for: 10m
-                  labels:
-                    severity: warning
-                  annotations:
-                    summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
-                    description: "Container {{ $labels.container }} has restarted more than 3 times in 15 minutes."
+          - name: internal-cluster
+            interval: 60s
+            rules:
+            - alert: InternalNodeDown
+              expr: up{k8s_cluster="internal", job="node-exporter"} == 0
+              for: 5m
+              labels:
+                severity: critical
+              annotations:
+                summary: Node {{ $labels.instance }} is down
+                description: node-exporter on {{ $labels.instance }} has been unreachable for 5 minutes.
+            - alert: InternalNodeNotReady
+              expr: kube_node_status_condition{k8s_cluster="internal", condition="Ready", status="true"} == 0
+              for: 10m
+              labels:
+                severity: critical
+              annotations:
+                summary: Node {{ $labels.node }} is not Ready
+                description: Node {{ $labels.node }} has been NotReady for 10 minutes.
+            - alert: InternalNodeMemoryPressure
+              expr: (node_memory_MemAvailable_bytes{k8s_cluster="internal"} / node_memory_MemTotal_bytes{k8s_cluster="internal"})
+                < 0.10
+              for: 15m
+              labels:
+                severity: warning
+              annotations:
+                summary: Node {{ $labels.instance }} is low on memory
+                description: Less than 10% memory available on {{ $labels.instance }} for 15 minutes.
+            - alert: InternalNodeDiskFilling
+              expr: (node_filesystem_avail_bytes{k8s_cluster="internal", fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{k8s_cluster="internal",
+                fstype!~"tmpfs|overlay"}) < 0.10
+              for: 15m
+              labels:
+                severity: warning
+              annotations:
+                summary: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is nearly full
+                description: Less than 10% free on {{ $labels.mountpoint }}.
+            - alert: InternalPodCrashLooping
+              expr: increase(kube_pod_container_status_restarts_total{k8s_cluster="internal"}[15m]) > 3
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping
+                description: Container {{ $labels.container }} has restarted more than 3 times in 15 minutes.
+          - name: estate-availability
+            interval: 60s
+            rules:
+            - alert: ClusterMetricsAbsent
+              expr: absent_over_time(up{k8s_cluster="core"}[10m])
+              for: 5m
+              labels:
+                severity: critical
+                k8s_cluster: core
+              annotations:
+                summary: No metrics from the core cluster
+                description: VictoriaMetrics has received no samples from core for over 10 minutes. The cluster may be down,
+                  or its remote-write link to core may be broken. Centrally-evaluated alerts for core are not firing while
+                  this is true.
+            - alert: ClusterMetricsAbsent
+              expr: absent_over_time(up{k8s_cluster="internal"}[10m])
+              for: 5m
+              labels:
+                severity: critical
+                k8s_cluster: internal
+              annotations:
+                summary: No metrics from the internal cluster
+                description: VictoriaMetrics has received no samples from internal for over 10 minutes. The cluster may be
+                  down, or its remote-write link to core may be broken. Centrally-evaluated alerts for internal are not firing
+                  while this is true.
+            - alert: ClusterMetricsAbsent
+              expr: absent_over_time(up{k8s_cluster="staging"}[10m])
+              for: 5m
+              labels:
+                severity: critical
+                k8s_cluster: staging
+              annotations:
+                summary: No metrics from the staging cluster
+                description: VictoriaMetrics has received no samples from staging for over 10 minutes. The cluster may be
+                  down, or its remote-write link to core may be broken. Centrally-evaluated alerts for staging are not firing
+                  while this is true.
+            - alert: ClusterMetricsAbsent
+              expr: absent_over_time(up{k8s_cluster="production"}[10m])
+              for: 5m
+              labels:
+                severity: critical
+                k8s_cluster: production
+              annotations:
+                summary: No metrics from the production cluster
+                description: VictoriaMetrics has received no samples from production for over 10 minutes. The cluster may
+                  be down, or its remote-write link to core may be broken. Centrally-evaluated alerts for production are not
+                  firing while this is true.
+          - name: estate-disk
+            interval: 60s
+            rules:
+            - alert: NodeDiskUsageHigh
+              expr: (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|ramfs|squashfs",mountpoint!~"/var/lib/kubelet/.*|/run/.*"}
+                / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|ramfs|squashfs",mountpoint!~"/var/lib/kubelet/.*|/run/.*"})
+                > 0.70
+              for: 1h
+              labels:
+                severity: warning
+              annotations:
+                summary: '{{ $labels.k8s_cluster }}/{{ $labels.instance }} {{ $labels.mountpoint }} is {{ $value | humanizePercentage
+                  }} full'
+                description: Sustained above 70% for an hour. The bundled NodeFilesystem alerts only fire above 95% or on
+                  a rising predict_linear slope, so a filesystem that ratchets up and then plateaus stays invisible to them.
+            - alert: NodeDiskUsageCritical
+              expr: (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|ramfs|squashfs",mountpoint!~"/var/lib/kubelet/.*|/run/.*"}
+                / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|ramfs|squashfs",mountpoint!~"/var/lib/kubelet/.*|/run/.*"})
+                > 0.85
+              for: 30m
+              labels:
+                severity: critical
+              annotations:
+                summary: '{{ $labels.k8s_cluster }}/{{ $labels.instance }} {{ $labels.mountpoint }} is {{ $value | humanizePercentage
+                  }} full'
+                description: Above 85% for 30 minutes. On the 18.3 GiB control-plane nodes this is roughly 2.5 GiB of headroom
+                  before disk-pressure evictions.
