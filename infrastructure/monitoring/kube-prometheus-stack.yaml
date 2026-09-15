@@ -72,6 +72,7 @@ spec:
         scrapeInterval: 30s
         externalLabels:
           k8s_cluster: core
+          cluster: core
         remoteWrite:
           - url: http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428/api/v1/write
             name: victoriametrics
@@ -173,6 +174,9 @@ spec:
       deploymentStrategy:
         type: Recreate
       envFromSecret: grafana-oidc
+      sidecar:
+        datasources:
+          isDefaultDatasource: false
       additionalDataSources:
         - name: Loki
           uid: loki
@@ -185,7 +189,7 @@ spec:
           type: prometheus
           access: proxy
           url: http://victoriametrics-victoria-metrics-single-server.monitoring.svc:8428
-          isDefault: false
+          isDefault: true
           jsonData:
             timeInterval: 30s
             prometheusType: Prometheus
