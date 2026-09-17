@@ -201,7 +201,7 @@ variable "ubuntu_image_url" {
 variable "vcpu" {
   description = "vCPU per node"
   type        = number
-  default     = 6
+  default     = 8
 }
 
 variable "vlan_id" {

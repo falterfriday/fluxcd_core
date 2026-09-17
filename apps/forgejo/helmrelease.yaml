@@ -49,8 +49,8 @@ spec:
       storageClass: ceph-block
     resources:
       requests:
-        cpu: 250m
-        memory: 512Mi
+        cpu: 100m
+        memory: 256Mi
       limits:
         memory: 1536Mi
     service:
