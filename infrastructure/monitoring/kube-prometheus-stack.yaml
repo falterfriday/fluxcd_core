@@ -214,6 +214,8 @@ spec:
         analytics:
           reporting_enabled: false
           check_for_updates: false
+        plugins:
+          preinstall_disabled: true
         auth.generic_oauth:
           enabled: true
           name: Authentik
