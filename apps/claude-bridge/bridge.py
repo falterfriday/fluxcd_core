@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Alertmanager -> Claude Code advisory bridge.
-
-Receives Alertmanager webhooks, gates them, runs a non-interactive Claude Code
-session scoped to read-only cluster access, and posts the advisory to Slack.
-Never mutates the cluster: enforcement is RBAC first, tool allowlist second.
-"""
+"""Alertmanager -> Claude Code advisory bridge."""
 
 import hashlib
 import json
@@ -70,7 +65,6 @@ values even if you can read them. Keep the whole advisory under 250 words."""
 
 
 class Gate:
-    """Allowlist, per-alert cooldown, and a global hourly cap on runs."""
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -135,19 +129,21 @@ def digest(obj):
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
 
+def credentials_path():
+    return os.path.join(CLAUDE_HOME, ".claude", ".credentials.json")
+
+
 def materialise_credentials(vault):
-    """Write the OAuth credential from Vault to a writable HOME the CLI can refresh."""
     creds = vault.read(VAULT_OAUTH_PATH)
-    os.makedirs(CLAUDE_HOME, exist_ok=True)
-    target = os.path.join(CLAUDE_HOME, ".credentials.json")
+    target = credentials_path()
+    os.makedirs(os.path.dirname(target), exist_ok=True)
     with open(target, "w") as f:
         json.dump(creds, f)
     os.chmod(target, 0o600)
-    return target, digest(creds)
+    return digest(creds)
 
 
 def persist_refreshed_credentials(vault, target, before):
-    """The CLI rotates the access token; push it back so Vault stays authoritative."""
     try:
         with open(target) as f:
             current = json.load(f)
@@ -180,7 +176,7 @@ def build_prompt(alert):
     return "\n".join(lines)
 
 
-def run_claude(prompt, credentials_home):
+def run_claude(prompt):
     cmd = [
         CLAUDE_BIN, "-p", prompt,
         "--output-format", "json",
@@ -188,26 +184,35 @@ def run_claude(prompt, credentials_home):
         "--effort", CLAUDE_EFFORT,
         "--permission-mode", "default",
         "--append-system-prompt", SYSTEM_PROMPT,
-        "--bare",
         "--strict-mcp-config",
         "--setting-sources", "",
         "--allowedTools", *ALLOWED_TOOLS,
         "--disallowedTools", *DISALLOWED_TOOLS,
     ]
     env = dict(os.environ)
-    env["HOME"] = credentials_home
+    env["HOME"] = CLAUDE_HOME
     env["PATH"] = "/opt/bin:" + env.get("PATH", "")
     LOG.info("running claude (timeout %ss, model %s)", RUN_TIMEOUT, CLAUDE_MODEL)
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True,
-                              timeout=RUN_TIMEOUT, env=env, cwd=credentials_home)
+                              timeout=RUN_TIMEOUT, env=env, cwd=CLAUDE_HOME)
     except subprocess.TimeoutExpired:
         return None, f"claude exceeded the {RUN_TIMEOUT}s wall-clock timeout"
-    if proc.returncode != 0:
-        return None, f"claude exited {proc.returncode}: {proc.stderr.strip()[:500]}"
+    payload = None
     try:
         payload = json.loads(proc.stdout)
     except ValueError:
+        payload = None
+
+    if isinstance(payload, dict) and payload.get("is_error"):
+        reason = payload.get("terminal_reason") or "unknown"
+        return None, f"claude reported an error ({reason}): {str(payload.get('result'))[:400]}"
+    if proc.returncode != 0:
+        detail = proc.stderr.strip()
+        if isinstance(payload, dict) and payload.get("result"):
+            detail = f"{payload['result']} (terminal_reason={payload.get('terminal_reason')})"
+        return None, f"claude exited {proc.returncode}: {detail[:500]}"
+    if payload is None:
         return proc.stdout.strip(), None
     if isinstance(payload, dict):
         return payload.get("result") or json.dumps(payload)[:2000], None
@@ -292,7 +297,6 @@ class Bridge(ThreadingHTTPServer):
             if not ok:
                 LOG.info("skipping %s (%s): %s", name, fp[:8], why)
                 continue
-            # one session at a time: protects the subscription's rate limits
             with self._run_lock:
                 self.handle_alert(alert, name)
 
@@ -300,22 +304,22 @@ class Bridge(ThreadingHTTPServer):
         LOG.info("triaging %s", name)
         try:
             slack = self.vault.read(VAULT_SLACK_PATH).get("webhook_url")
-        except Exception as exc:  # noqa: BLE001 - surface any Vault failure
+        except Exception as exc:  # noqa: BLE001
             LOG.error("vault read failed for %s (%s): %s", name, VAULT_SLACK_PATH, exc)
             return
         try:
-            home, before = materialise_credentials(self.vault)
-        except Exception as exc:  # noqa: BLE001 - vault read or local file setup
+            before = materialise_credentials(self.vault)
+        except Exception as exc:  # noqa: BLE001
             LOG.error("credential setup failed for %s: %s", name, exc)
             return
         if DRY_RUN:
             LOG.info("DRY_RUN set; would have triaged %s", name)
             return
         try:
-            body, err = run_claude(build_prompt(alert), home)
-            persist_refreshed_credentials(self.vault, os.path.join(home, ".credentials.json"), before)
+            body, err = run_claude(build_prompt(alert))
+            persist_refreshed_credentials(self.vault, credentials_path(), before)
         finally:
-            shutil.rmtree(os.path.join(home, "projects"), ignore_errors=True)
+            shutil.rmtree(os.path.join(CLAUDE_HOME, ".claude", "projects"), ignore_errors=True)
         if err:
             LOG.error("run failed for %s: %s", name, err)
             if slack:
