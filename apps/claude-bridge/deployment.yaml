@@ -102,7 +102,7 @@ spec:
             - name: MAX_RUNS_PER_HOUR
               value: "4"
             - name: DRY_RUN
-              value: "true"
+              value: "false"
             - name: PATH
               value: "/opt/bin:/usr/local/bin:/usr/bin:/bin"
           ports:
