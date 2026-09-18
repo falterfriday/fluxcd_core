@@ -2,6 +2,7 @@
 """Alertmanager -> Claude Code advisory bridge."""
 
 import hashlib
+import hmac
 import json
 import logging
 import os
@@ -24,6 +25,9 @@ VAULT_MOUNT = os.environ.get("VAULT_MOUNT", "secret")
 VAULT_OAUTH_PATH = os.environ.get("VAULT_OAUTH_PATH", "claude-bridge/oauth")
 VAULT_SLACK_PATH = os.environ.get("VAULT_SLACK_PATH", "claude-bridge/slack")
 VAULT_CACERT = os.environ.get("VAULT_CACERT", "/var/run/vault-ca/ca.crt")
+WEBHOOK_TOKEN_FILE = os.environ.get("WEBHOOK_TOKEN_FILE", "/var/run/webhook/token")
+MAX_BODY_BYTES = int(os.environ.get("MAX_BODY_BYTES", str(1 << 20)))
+WEBHOOK_TOKEN = ""
 SA_TOKEN_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 CLAUDE_HOME = os.environ.get("CLAUDE_HOME", "/var/run/claude")
@@ -354,11 +358,28 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._reply(404, b"not found")
 
+    def _authorised(self):
+        scheme, _, value = self.headers.get("Authorization", "").partition(" ")
+        if scheme.lower() != "bearer":
+            return False
+        return hmac.compare_digest(value.strip(), WEBHOOK_TOKEN)
+
     def do_POST(self):
         if self.path != "/alert":
             self._reply(404, b"not found")
             return
+        if not self._authorised():
+            LOG.warning("rejected unauthenticated POST /alert from %s", self.address_string())
+            self.close_connection = True
+            self._reply(401, b"unauthorized")
+            return
         length = int(self.headers.get("Content-Length") or 0)
+        if length > MAX_BODY_BYTES:
+            LOG.warning("rejected oversized POST /alert (%d bytes) from %s",
+                        length, self.address_string())
+            self.close_connection = True
+            self._reply(413, b"payload too large")
+            return
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
@@ -425,6 +446,7 @@ class Bridge(ThreadingHTTPServer):
 
 
 def main():
+    global WEBHOOK_TOKEN
     logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     if not os.path.exists(CLAUDE_BIN):
@@ -433,10 +455,20 @@ def main():
     if not os.path.exists(VAULT_CACERT):
         LOG.error("vault CA bundle missing at %s", VAULT_CACERT)
         return 1
+    try:
+        with open(WEBHOOK_TOKEN_FILE) as f:
+            WEBHOOK_TOKEN = f.read().strip()
+    except OSError as exc:
+        LOG.error("webhook token unreadable at %s: %s", WEBHOOK_TOKEN_FILE, exc)
+        return 1
+    if not WEBHOOK_TOKEN:
+        LOG.error("webhook token at %s is empty", WEBHOOK_TOKEN_FILE)
+        return 1
     vault = Vault()
     vault.login()
     server = Bridge(("", 8080), vault, Gate())
-    LOG.info("listening on :8080  allowlist=%s cooldown=%ss cap=%s/h dry_run=%s",
+    LOG.info("listening on :8080  bearer auth required on /alert  "
+             "allowlist=%s cooldown=%ss cap=%s/h dry_run=%s",
              sorted(ALLOWLIST) or "<any>", COOLDOWN, MAX_RUNS_PER_HOUR, DRY_RUN)
     server.serve_forever()
     return 0

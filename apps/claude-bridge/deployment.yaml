@@ -87,6 +87,8 @@ spec:
               value: "claude-bridge"
             - name: VAULT_CACERT
               value: "/var/run/vault-ca/ca.crt"
+            - name: WEBHOOK_TOKEN_FILE
+              value: "/var/run/webhook/token"
             - name: CLAUDE_BIN
               value: "/opt/bin/claude"
             - name: CLAUDE_HOME
@@ -136,6 +138,7 @@ spec:
             - { name: claude-home, mountPath: /var/run/claude }
             - { name: app, mountPath: /app, readOnly: true }
             - { name: vault-ca, mountPath: /var/run/vault-ca, readOnly: true }
+            - { name: webhook-token, mountPath: /var/run/webhook, readOnly: true }
             - { name: tmp, mountPath: /tmp }
       volumes:
         - name: opt-bin
@@ -158,3 +161,10 @@ spec:
             items:
               - key: ca.crt
                 path: ca.crt
+        - name: webhook-token
+          secret:
+            secretName: claude-bridge-webhook
+            defaultMode: 0400
+            items:
+              - key: token
+                path: token
