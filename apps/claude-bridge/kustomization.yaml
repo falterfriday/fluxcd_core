@@ -4,6 +4,8 @@ namespace: claude-bridge
 resources:
   - namespace.yaml
   - rbac.yaml
+  - certificate.yaml
+  - networkpolicy.yaml
   - service.yaml
   - deployment.yaml
 configMapGenerator:
