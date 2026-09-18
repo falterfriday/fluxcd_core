@@ -139,7 +139,6 @@ def materialise_credentials(vault):
     """Write the OAuth credential from Vault to a writable HOME the CLI can refresh."""
     creds = vault.read(VAULT_OAUTH_PATH)
     os.makedirs(CLAUDE_HOME, exist_ok=True)
-    os.chmod(CLAUDE_HOME, 0o700)
     target = os.path.join(CLAUDE_HOME, ".credentials.json")
     with open(target, "w") as f:
         json.dump(creds, f)
@@ -301,9 +300,13 @@ class Bridge(ThreadingHTTPServer):
         LOG.info("triaging %s", name)
         try:
             slack = self.vault.read(VAULT_SLACK_PATH).get("webhook_url")
-            home, before = materialise_credentials(self.vault)
         except Exception as exc:  # noqa: BLE001 - surface any Vault failure
-            LOG.error("vault read failed for %s: %s", name, exc)
+            LOG.error("vault read failed for %s (%s): %s", name, VAULT_SLACK_PATH, exc)
+            return
+        try:
+            home, before = materialise_credentials(self.vault)
+        except Exception as exc:  # noqa: BLE001 - vault read or local file setup
+            LOG.error("credential setup failed for %s: %s", name, exc)
             return
         if DRY_RUN:
             LOG.info("DRY_RUN set; would have triaged %s", name)
