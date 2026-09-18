@@ -76,12 +76,8 @@ cat <<'NEXTEOF'
 ==> configuration complete. Two secrets must still be seeded by hand so the
     values never pass through a terminal transcript:
 
-  # the Claude Code OAuth credential. read+write: the bridge writes back
-  # refreshed tokens so the stored copy does not go stale (the access token
-  # rotates roughly every 8h; the refresh token expires ~20 days out).
   vault kv put secret/claude-bridge/oauth @"$HOME/.claude/.credentials.json"
 
-  # the Slack webhook the advisories are posted to (#monitoring-core)
   vault kv put secret/claude-bridge/slack webhook_url=@"$HOME/.slack-webhook"
 
     Verify without printing the values:
