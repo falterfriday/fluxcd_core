@@ -1,0 +1,150 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-bridge
+  namespace: claude-bridge
+  labels:
+    app.kubernetes.io/name: claude-bridge
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: claude-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: claude-bridge
+    spec:
+      serviceAccountName: claude-bridge
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      initContainers:
+        - name: install-tools
+          image: docker.io/curlimages/curl:8.11.1
+          command: ["sh", "-euc"]
+          args:
+            - |
+              CLAUDE_TGZ=/tmp/claude.tgz
+              curl -fsSL --retry 3 -o "$CLAUDE_TGZ" \
+                "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-${CLAUDE_VERSION}.tgz"
+              echo "${CLAUDE_SHA512}  ${CLAUDE_TGZ}" | sha512sum -c -
+              tar xzf "$CLAUDE_TGZ" -C /tmp package/claude
+              cp /tmp/package/claude /opt/bin/claude
+              chmod 0755 /opt/bin/claude
+              rm -rf "$CLAUDE_TGZ" /tmp/package
+
+              curl -fsSL --retry 3 -o /opt/bin/kubectl \
+                "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+              echo "${KUBECTL_SHA256}  /opt/bin/kubectl" | sha256sum -c -
+              chmod 0755 /opt/bin/kubectl
+
+              /opt/bin/kubectl version --client=true --output=yaml | head -4
+              echo "install-tools: claude ${CLAUDE_VERSION} and kubectl ${KUBECTL_VERSION} staged"
+          env:
+            - name: CLAUDE_VERSION
+              value: "2.1.267"
+            - name: CLAUDE_SHA512
+              value: "fed6e1ee65702a5b0657834748ca7e071ba5bb62f2f834a70fb25cb1241ec7c50ed86ee9abcb185c85d734b475976534e0e89afeacc7f14914a274579305897a"
+            - name: KUBECTL_VERSION
+              value: "v1.35.6"
+            - name: KUBECTL_SHA256
+              value: "5d11e2ba01ea68ffd053f56e27738e2b4330013ee67f7e46c6da6c585d3c9926"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - { name: opt-bin, mountPath: /opt/bin }
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: bridge
+          image: docker.io/python:3.12-slim
+          command: ["python3", "-u", "/app/bridge.py"]
+          env:
+            - name: VAULT_ADDR
+              value: "https://vault-active.vault.svc:8200"
+            - name: VAULT_ROLE
+              value: "claude-bridge"
+            - name: CLAUDE_BIN
+              value: "/opt/bin/claude"
+            - name: CLAUDE_HOME
+              value: "/var/run/claude"
+            - name: CLAUDE_MODEL
+              value: "claude-opus-5"
+            - name: CLAUDE_EFFORT
+              value: "medium"
+            - name: RUN_TIMEOUT_SECONDS
+              value: "600"
+            - name: ALERT_ALLOWLIST
+              value: "KubeJobFailed,KubeDeploymentReplicasMismatch,KubeStatefulSetUpdateNotRolledOut,KubePodCrashLooping"
+            - name: COOLDOWN_SECONDS
+              value: "3600"
+            - name: MAX_RUNS_PER_HOUR
+              value: "4"
+            - name: DRY_RUN
+              value: "true"
+            - name: PATH
+              value: "/opt/bin:/usr/local/bin:/usr/bin:/bin"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - { name: opt-bin, mountPath: /opt/bin, readOnly: true }
+            - { name: claude-home, mountPath: /var/run/claude }
+            - { name: app, mountPath: /app, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: opt-bin
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: claude-home
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: app
+          configMap:
+            name: claude-bridge-app
+            defaultMode: 0555
