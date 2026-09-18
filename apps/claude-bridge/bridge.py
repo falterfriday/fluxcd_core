@@ -155,6 +155,36 @@ def materialise_credentials(vault):
     return digest(creds)
 
 
+OAUTH_TOKEN_FIELDS = ("accessToken", "refreshToken")
+
+
+def oauth_tokens(creds):
+    if isinstance(creds, str):
+        try:
+            creds = json.loads(creds)
+        except ValueError:
+            return None
+    if not isinstance(creds, dict):
+        return None
+    if any(field in creds for field in OAUTH_TOKEN_FIELDS):
+        return {field: creds.get(field) for field in OAUTH_TOKEN_FIELDS}
+    for value in creds.values():
+        found = oauth_tokens(value)
+        if found is not None:
+            return found
+    return None
+
+
+def credentials_usable(creds):
+    tokens = oauth_tokens(creds)
+    if tokens is None:
+        return False, "no oauth token fields present"
+    empty = [f for f in OAUTH_TOKEN_FIELDS if not str(tokens.get(f) or "").strip()]
+    if empty:
+        return False, "empty " + " and ".join(empty)
+    return True, "ok"
+
+
 def persist_refreshed_credentials(vault, target, before):
     try:
         with open(target) as f:
@@ -163,6 +193,11 @@ def persist_refreshed_credentials(vault, target, before):
         LOG.warning("could not re-read credentials after run: %s", exc)
         return
     if digest(current) == before:
+        return
+    ok, why = credentials_usable(current)
+    if not ok:
+        LOG.error("refusing to write back credentials to vault (%s); "
+                  "the stored secret at %s is left untouched", why, VAULT_OAUTH_PATH)
         return
     vault.write(VAULT_OAUTH_PATH, current)
     LOG.info("vault: wrote back refreshed credentials")
