@@ -113,16 +113,24 @@ class Vault:
         LOG.info("vault: authenticated via kubernetes auth as role %s", VAULT_ROLE)
         return self._token
 
-    def read(self, path):
+    def _authenticated(self, method, path, body=None):
         if not self._token:
             self.login()
-        out = self._call("GET", f"{VAULT_MOUNT}/data/{path}", token=self._token)
+        try:
+            return self._call(method, path, body, token=self._token)
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (401, 403):
+                raise
+            LOG.info("vault: token rejected (%s), re-authenticating", exc.code)
+            self.login()
+            return self._call(method, path, body, token=self._token)
+
+    def read(self, path):
+        out = self._authenticated("GET", f"{VAULT_MOUNT}/data/{path}")
         return out["data"]["data"]
 
     def write(self, path, data):
-        if not self._token:
-            self.login()
-        self._call("POST", f"{VAULT_MOUNT}/data/{path}", {"data": data}, token=self._token)
+        self._authenticated("POST", f"{VAULT_MOUNT}/data/{path}", {"data": data})
 
 
 def digest(obj):
