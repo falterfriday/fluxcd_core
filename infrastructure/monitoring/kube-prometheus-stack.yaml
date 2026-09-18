@@ -105,6 +105,7 @@ spec:
       alertmanagerSpec:
         secrets:
           - alertmanager-slack
+          - alertmanager-claude-bridge
         resources:
           requests:
             cpu: 25m
@@ -150,6 +151,10 @@ spec:
               - url: http://claude-bridge.claude-bridge.svc.cluster.local:8080/alert
                 send_resolved: false
                 max_alerts: 1
+                http_config:
+                  authorization:
+                    type: Bearer
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-claude-bridge/token
           - name: slack-notifications
             slack_configs:
               - channel: '#monitoring-core'

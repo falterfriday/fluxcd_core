@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: alertmanager-claude-bridge
+    namespace: monitoring
+type: Opaque
+stringData:
+    token: ENC[AES256_GCM,data:qxTspUutHjxsjwRLCKzhyst0rx6CGRbGteAhuaaB+KCnDdpjNnXCdhcl6QzNq9Pl,iv:vjXW/Ap92hKIYYNrtOokqTlyqE65qH1aOVRtGi5ax4M=,tag:OhBC71Xf07Wsdg6W7x91hQ==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3eEZDdEtHcEljcDhNN1o2
+            dnZ5d0ZEK2xJb1ROT3N5aWd3NEY1K3NkNlRNCnJCZXNSRUZnaWpKeXRFdWlKYURL
+            b2E3NHZobFZUd1A0QnpRNWpyWGVjbDQKLS0tIHAzMFNUZHJicUwyRmttRzZUNkdM
+            eEVzbDc5NGhBTHNhemNLRnRxQ2lFbVkKne0iAD2/xENIW/LZED+ERj6jsX/UvYA5
+            6uGMRpayYeAxgkg2Y73VymF3qG7LnRkDd89ihI/gUBBh55SJ9Dmr/Q==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-18T18:31:01Z"
+    mac: ENC[AES256_GCM,data:lTuvVArd34wkKFPVfI9ALyuFeZKYkBxNxDSuzwtkXoTlzcZ7BKpJ4Vyfi2qRHCvUi6SIMw5/e0HxFNACUOvkS9toTXuscoDysGmuvU2j6ABcXrjJiqmyF9OCKsVmO7HDNZA7nUjR/HISIwLQswEPIRqBvEM+w/fUUkNTXH7WxVY=,iv:47EWT7hlRnwesxepvy46VkCGxDVmOszzkTsSpZ/ZWfI=,tag:7iVv3AeOnjLo0gAogfjtHA==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1

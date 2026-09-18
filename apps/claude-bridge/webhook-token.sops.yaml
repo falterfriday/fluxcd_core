@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: claude-bridge-webhook
+    namespace: claude-bridge
+type: Opaque
+stringData:
+    token: ENC[AES256_GCM,data:UAZoaf2MHowAp+dHB3AUKxfmQ0oDiC8GLbq0JWYTlhqOTd3TM3zHZni/IpKVxH81,iv:ytj1d/1wpXaHVsjsL2n5MpJtEm98TUzneT5boDguBBw=,tag:0OPP542iMIF+ZPb8kyKAWg==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBGMEI0SWFwMFpIVmpsS0ZM
+            VVF4RFdtcTQxc2hwdi8rK2djRDRXcmpkWmw0CmpvOCt6WHNyREVIajFsekRWbFl5
+            b2R2U1VwY2VKeDJvWCt5UWgwN0ZBeXMKLS0tIDMwaXpIU2dBQXBSWHQwbEtMMnBK
+            cmtIQ3pzN1d0ZWN2TW4xblQwS2VXaXMKqIBUCdfDqwej5w05V0H5sfWdzel7Mqya
+            14z5l3ywzXujITPTa21e8SHqUvymvyrrNHoS0yMqsdaI9MjrwStM7A==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-18T18:31:00Z"
+    mac: ENC[AES256_GCM,data:dqJWLz58YP/bARSUu+yN8ZuxL+qyFR255YRiZEjrr1W5dCc5Yx5mhKSrZxzhSu/of/41PyjLh3+nDvahFDKDMMuVHslvG6QWgZbfXhI11bS2YT5mp0FPAcotMSaouzyjL9Nd5OI8Dc60cY3/CfK3aQ+JWkl09UCUYLsw+GkxnVE=,iv:argFycVFKye4hn5rt/DOPDPVQuhOx7Kv/RPdBZDHa5E=,tag:9BlifcdPT4oaObIQxIrBoA==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1

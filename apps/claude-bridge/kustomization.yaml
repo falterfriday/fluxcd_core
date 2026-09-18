@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - rbac.yaml
   - certificate.yaml
+  - webhook-token.sops.yaml
   - networkpolicy.yaml
   - service.yaml
   - deployment.yaml
