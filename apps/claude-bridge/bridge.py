@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import shutil
+import signal
 import ssl
 import subprocess
 import sys
@@ -22,8 +23,8 @@ VAULT_ROLE = os.environ.get("VAULT_ROLE", "claude-bridge")
 VAULT_MOUNT = os.environ.get("VAULT_MOUNT", "secret")
 VAULT_OAUTH_PATH = os.environ.get("VAULT_OAUTH_PATH", "claude-bridge/oauth")
 VAULT_SLACK_PATH = os.environ.get("VAULT_SLACK_PATH", "claude-bridge/slack")
+VAULT_CACERT = os.environ.get("VAULT_CACERT", "/var/run/vault-ca/ca.crt")
 SA_TOKEN_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-K8S_CA = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 CLAUDE_HOME = os.environ.get("CLAUDE_HOME", "/var/run/claude")
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "/opt/bin/claude")
@@ -37,16 +38,17 @@ MAX_RUNS_PER_HOUR = int(os.environ.get("MAX_RUNS_PER_HOUR", "4"))
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
 
 ALLOWED_TOOLS = [
-    "Read",
-    "Grep",
-    "Glob",
     "Bash(kubectl get:*)",
     "Bash(kubectl describe:*)",
     "Bash(kubectl logs:*)",
     "Bash(kubectl top:*)",
     "Bash(kubectl events:*)",
+    "Bash(kubectl auth can-i:*)",
+    "Bash(kubectl api-resources:*)",
+    "Bash(kubectl explain:*)",
 ]
-DISALLOWED_TOOLS = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch", "Task"]
+DISALLOWED_TOOLS = ["Read", "Grep", "Glob", "Write", "Edit", "NotebookEdit",
+                    "WebFetch", "WebSearch", "Task"]
 
 SYSTEM_PROMPT = """You are an SRE assistant triaging a single Prometheus alert on a
 Kubernetes platform cluster named "core". You have READ-ONLY access: your
@@ -61,7 +63,11 @@ Produce a short advisory for a human operator, in this shape:
 
 Rules: investigate before concluding. If the evidence is inconclusive, say so
 rather than guessing. Never claim to have fixed anything. Do not print secret
-values even if you can read them. Keep the whole advisory under 250 words."""
+values even if you can read them. Keep the whole advisory under 250 words.
+
+Your kubectl credentials are read-only: get, list and watch on workload and
+node resources, with no access to secrets. Mutating verbs will be refused by
+the API server, so do not attempt them."""
 
 
 class Gate:
@@ -89,9 +95,7 @@ class Gate:
 
 class Vault:
     def __init__(self):
-        self._ctx = ssl.create_default_context()
-        self._ctx.check_hostname = False
-        self._ctx.verify_mode = ssl.CERT_NONE
+        self._ctx = ssl.create_default_context(cafile=VAULT_CACERT)
         self._token = None
 
     def _call(self, method, path, body=None, token=None):
@@ -184,6 +188,24 @@ def build_prompt(alert):
     return "\n".join(lines)
 
 
+def terminate_group(proc):
+    try:
+        pgid = os.getpgid(proc.pid)
+    except OSError:
+        proc.kill()
+        return
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(pgid, sig)
+        except OSError:
+            return
+        try:
+            proc.wait(timeout=5)
+            return
+        except subprocess.TimeoutExpired:
+            continue
+
+
 def run_claude(prompt):
     cmd = [
         CLAUDE_BIN, "-p", prompt,
@@ -201,27 +223,53 @@ def run_claude(prompt):
     env["HOME"] = CLAUDE_HOME
     env["PATH"] = "/opt/bin:" + env.get("PATH", "")
     LOG.info("running claude (timeout %ss, model %s)", RUN_TIMEOUT, CLAUDE_MODEL)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, env=env, cwd=CLAUDE_HOME,
+                            start_new_session=True)
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True,
-                              timeout=RUN_TIMEOUT, env=env, cwd=CLAUDE_HOME)
+        stdout, stderr = proc.communicate(timeout=RUN_TIMEOUT)
     except subprocess.TimeoutExpired:
+        terminate_group(proc)
+        try:
+            proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            LOG.error("teardown: stdio still held after SIGKILL, abandoning the pipes")
+            for pipe in (proc.stdout, proc.stderr):
+                try:
+                    pipe.close()
+                except OSError:
+                    pass
+            proc.poll()
         return None, f"claude exceeded the {RUN_TIMEOUT}s wall-clock timeout"
     payload = None
     try:
-        payload = json.loads(proc.stdout)
+        payload = json.loads(stdout)
     except ValueError:
         payload = None
+
+    if isinstance(payload, dict):
+        denials = payload.get("permission_denials") or []
+        if denials:
+            blocked = []
+            for d in denials:
+                if not isinstance(d, dict):
+                    continue
+                tool_input = d.get("tool_input")
+                command = tool_input.get("command") if isinstance(tool_input, dict) else None
+                blocked.append(command or d.get("tool_name") or "?")
+            LOG.warning("%d tool call(s) denied by the permission layer: %s",
+                        len(denials), "; ".join(str(x)[:120] for x in blocked[:5]))
 
     if isinstance(payload, dict) and payload.get("is_error"):
         reason = payload.get("terminal_reason") or "unknown"
         return None, f"claude reported an error ({reason}): {str(payload.get('result'))[:400]}"
     if proc.returncode != 0:
-        detail = proc.stderr.strip()
+        detail = stderr.strip()
         if isinstance(payload, dict) and payload.get("result"):
             detail = f"{payload['result']} (terminal_reason={payload.get('terminal_reason')})"
         return None, f"claude exited {proc.returncode}: {detail[:500]}"
     if payload is None:
-        return proc.stdout.strip(), None
+        return stdout.strip(), None
     if isinstance(payload, dict):
         return payload.get("result") or json.dumps(payload)[:2000], None
     return json.dumps(payload)[:2000], None
@@ -306,7 +354,10 @@ class Bridge(ThreadingHTTPServer):
                 LOG.info("skipping %s (%s): %s", name, fp[:8], why)
                 continue
             with self._run_lock:
-                self.handle_alert(alert, name)
+                try:
+                    self.handle_alert(alert, name)
+                except Exception:  # noqa: BLE001
+                    LOG.exception("unhandled error while triaging %s (%s)", name, fp[:8])
 
     def handle_alert(self, alert, name):
         LOG.info("triaging %s", name)
@@ -343,6 +394,9 @@ def main():
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     if not os.path.exists(CLAUDE_BIN):
         LOG.error("claude binary missing at %s", CLAUDE_BIN)
+        return 1
+    if not os.path.exists(VAULT_CACERT):
+        LOG.error("vault CA bundle missing at %s", VAULT_CACERT)
         return 1
     vault = Vault()
     vault.login()

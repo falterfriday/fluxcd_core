@@ -1,0 +1,24 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: claude-bridge-vault-ca
+  namespace: claude-bridge
+spec:
+  secretName: claude-bridge-vault-ca
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - client auth
+  commonName: claude-bridge.claude-bridge.svc
+  dnsNames:
+    - claude-bridge.claude-bridge.svc
+    - claude-bridge.claude-bridge.svc.cluster.local
+  issuerRef:
+    name: internal-ca-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
