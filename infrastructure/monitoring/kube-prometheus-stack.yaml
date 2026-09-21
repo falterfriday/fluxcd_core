@@ -224,9 +224,9 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 192Mi
+          memory: 320Mi
         limits:
-          memory: 384Mi
+          memory: 768Mi
       grafana.ini:
         server:
           root_url: https://grafana.core.stplabs.io
