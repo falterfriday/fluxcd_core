@@ -33,7 +33,7 @@ spec:
     target: prefer-standby
     barmanObjectStore:
       destinationPath: s3://cnpg-forgejo/core/forgejo/cnpg
-      endpointURL: https://rustfs.internal.stplabs.io
+      endpointURL: https://rustfs.core.stplabs.io
       serverName: forgejo-db
       s3Credentials:
         accessKeyId:

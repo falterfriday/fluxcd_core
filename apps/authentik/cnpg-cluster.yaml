@@ -33,7 +33,7 @@ spec:
     target: prefer-standby
     barmanObjectStore:
       destinationPath: s3://cnpg-authentik/core/authentik/cnpg
-      endpointURL: https://rustfs.internal.stplabs.io
+      endpointURL: https://rustfs.core.stplabs.io
       serverName: authentik-db
       s3Credentials:
         accessKeyId:

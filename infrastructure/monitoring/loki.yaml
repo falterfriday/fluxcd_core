@@ -33,7 +33,7 @@ spec:
           chunks: loki-core
           ruler: loki-core
         s3:
-          endpoint: rustfs.internal.stplabs.io
+          endpoint: rustfs.core.stplabs.io
           region: us-east-1
           accessKeyId: ${LOKI_S3_ACCESS_KEY_ID}
           secretAccessKey: ${LOKI_S3_SECRET_ACCESS_KEY}
