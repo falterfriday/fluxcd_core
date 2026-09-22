@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rustfs
+  labels:
+    kubernetes.io/metadata.name: rustfs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustfs
+  namespace: rustfs
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: rustfs
+  namespace: rustfs
+  labels:
+    kubernetes.io/service-name: rustfs
+addressType: IPv4
+ports:
+  - name: http
+    port: 30293
+    protocol: TCP
+endpoints:
+  - addresses:
+      - 10.130.0.6
+    conditions:
+      ready: true
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rustfs
+  namespace: rustfs
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: rustfs.core.stplabs.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rustfs
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - rustfs.core.stplabs.io
+      secretName: rustfs-tls
