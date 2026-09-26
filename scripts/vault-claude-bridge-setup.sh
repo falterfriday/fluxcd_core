@@ -84,7 +84,14 @@ cat <<'NEXTEOF'
   vault kv metadata get secret/claude-bridge/oauth
   vault kv metadata get secret/claude-bridge/slack
 
-    No kubeconfig is needed: the bridge investigates the cluster it runs on
-    (core) using its own projected ServiceAccount token, which Kubernetes
-    rotates automatically.
+    Core needs no kubeconfig: the bridge uses its own projected ServiceAccount
+    token there. The other three clusters each need one, generated after their
+    read-only RBAC is merged:
+
+  ./scripts/claude-bridge-kubeconfig.sh staging staging \
+    | vault kv put secret/claude-bridge/kubeconfig-staging kubeconfig=-
+  ./scripts/claude-bridge-kubeconfig.sh production production \
+    | vault kv put secret/claude-bridge/kubeconfig-production kubeconfig=-
+  ./scripts/claude-bridge-kubeconfig.sh internal internal \
+    | vault kv put secret/claude-bridge/kubeconfig-internal kubeconfig=-
 NEXTEOF

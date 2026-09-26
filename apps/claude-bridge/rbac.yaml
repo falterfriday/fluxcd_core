@@ -36,6 +36,7 @@ rules:
       - daemonsets
       - daemonsets/status
       - replicasets
+      - controllerrevisions
     verbs: ["get", "list", "watch"]
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]

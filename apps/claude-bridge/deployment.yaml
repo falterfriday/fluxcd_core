@@ -100,7 +100,11 @@ spec:
             - name: RUN_TIMEOUT_SECONDS
               value: "600"
             - name: ALERT_ALLOWLIST
-              value: "KubeJobFailed,KubeDeploymentReplicasMismatch,KubeStatefulSetUpdateNotRolledOut,KubePodCrashLooping"
+              value: ""
+            - name: ALERT_DENYLIST
+              value: "Watchdog,InfoInhibitor,CephHealthWarning,CephPoolGrowthWarning,CephOSDTimeoutsClusterNetwork,CephOSDTimeoutsPublicNetwork,KubeCPUOvercommit,PrometheusRemoteWriteBehind,PrometheusRuleFailures"
+            - name: LOCAL_CLUSTER
+              value: "core"
             - name: COOLDOWN_SECONDS
               value: "3600"
             - name: MAX_RUNS_PER_HOUR
