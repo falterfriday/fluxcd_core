@@ -54,6 +54,7 @@ ALLOWED_TOOLS = [
     "Bash(kubectl auth can-i:*)",
     "Bash(kubectl api-resources:*)",
     "Bash(kubectl explain:*)",
+    "Bash(/app/klog:*)",
 ]
 DISALLOWED_TOOLS = ["Read", "Grep", "Glob", "Write", "Edit", "NotebookEdit",
                     "WebFetch", "WebSearch", "Task"]
@@ -77,7 +78,19 @@ values even if you can read them. Keep the whole advisory under 250 words.
 
 Your kubectl credentials are read-only: get, list and watch on workload and
 node resources, with no access to secrets. Mutating verbs will be refused by
-the API server, so do not attempt them."""
+the API server, so do not attempt them.
+
+Every Bash call must be a single command starting with "kubectl" or
+"/app/klog". Shell compounds are refused by the permission layer: no pipelines,
+no semicolons or &&, no for loops, no redirection, no cd. To filter kubectl
+output, use its own flags (-o jsonpath, -l, --field-selector, --tail, --since).
+To look at several pods, make one call per pod.
+
+To search a pod's logs by pattern, use the klog helper rather than piping:
+  /app/klog -n NAMESPACE -p POD -e "error|traceback" [-c CONTAINER] [-s 24h] [-t 2000]
+It greps one pod's logs and prints matching lines (SINCE defaults to 24h, at
+most 300 lines). Prefer it over a small --tail, which only shows the newest
+lines and will miss an earlier failure."""
 
 
 class Gate:
