@@ -77,9 +77,10 @@ cat <<'NEXTEOF'
     values never pass through a terminal transcript. The bridge has read-only
     access to them; it never writes to vault.
 
-    A long-lived Anthropic token, from `claude setup-token`. Paste it when
-    prompted rather than passing it as an argument:
-  vault kv put secret/claude-bridge/anthropic-token token=-
+    A long-lived Anthropic token, from `claude setup-token`. Write it to a
+    file first: "token=-" reads stdin, and anything typed on the same line
+    becomes part of the value (a stray "-" fails as 401 Invalid bearer token).
+  vault kv put secret/claude-bridge/anthropic-token token=@/path/to/token.txt
 
   vault kv put secret/claude-bridge/slack webhook_url=@"$HOME/.slack-webhook"
 
