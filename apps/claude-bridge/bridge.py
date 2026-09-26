@@ -150,11 +150,18 @@ def digest(obj):
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
 
+TOKEN_PREFIX = "sk-ant-"
+
+
 def read_anthropic_token(vault):
     data = vault.read(VAULT_TOKEN_PATH)
     token = (data.get("token") or "").strip()
     if not token:
         raise RuntimeError(f"{VAULT_TOKEN_PATH} has no non-empty 'token' key")
+    if not token.startswith(TOKEN_PREFIX):
+        LOG.warning("token at %s does not start with %r (len=%d, starts %r) - "
+                    "a stray character from seeding will fail as 401 Invalid bearer token",
+                    VAULT_TOKEN_PATH, TOKEN_PREFIX, len(token), token[:10])
     return token
 
 
