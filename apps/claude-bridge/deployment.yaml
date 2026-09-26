@@ -102,7 +102,7 @@ spec:
             - name: ALERT_ALLOWLIST
               value: ""
             - name: ALERT_DENYLIST
-              value: "Watchdog,InfoInhibitor,CephHealthWarning,CephPoolGrowthWarning,CephOSDTimeoutsClusterNetwork,CephOSDTimeoutsPublicNetwork,KubeCPUOvercommit,PrometheusRemoteWriteBehind,PrometheusRuleFailures"
+              value: "Watchdog,InfoInhibitor,CephHealthWarning,CephOSDTimeoutsClusterNetwork,CephOSDTimeoutsPublicNetwork,KubeCPUOvercommit,PrometheusRemoteWriteBehind"
             - name: LOCAL_CLUSTER
               value: "core"
             - name: COOLDOWN_SECONDS

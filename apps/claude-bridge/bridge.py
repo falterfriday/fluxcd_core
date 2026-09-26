@@ -81,7 +81,10 @@ node resources, with no access to secrets. Mutating verbs will be refused by
 the API server, so do not attempt them.
 
 Every Bash call must be a single command starting with "kubectl" or
-"/app/klog". Shell compounds are refused by the permission layer: no pipelines,
+"/app/klog". Put the subcommand immediately after "kubectl": write
+"kubectl get pods -n NS", never "kubectl -n NS get pods" - the permission
+layer matches on the leading words, so a flag before the subcommand is
+refused. Shell compounds are refused by the permission layer: no pipelines,
 no semicolons or &&, no for loops, no redirection, no cd. To filter kubectl
 output, use its own flags (-o jsonpath, -l, --field-selector, --tail, --since).
 To look at several pods, make one call per pod.
