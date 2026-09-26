@@ -22,7 +22,8 @@ LOG = logging.getLogger("claude-bridge")
 VAULT_ADDR = os.environ.get("VAULT_ADDR", "https://vault.vault.svc:8200")
 VAULT_ROLE = os.environ.get("VAULT_ROLE", "claude-bridge")
 VAULT_MOUNT = os.environ.get("VAULT_MOUNT", "secret")
-VAULT_OAUTH_PATH = os.environ.get("VAULT_OAUTH_PATH", "claude-bridge/oauth")
+VAULT_TOKEN_PATH = os.environ.get("VAULT_TOKEN_PATH", "claude-bridge/anthropic-token")
+TOKEN_ENV_VAR = os.environ.get("TOKEN_ENV_VAR", "CLAUDE_CODE_OAUTH_TOKEN")
 VAULT_SLACK_PATH = os.environ.get("VAULT_SLACK_PATH", "claude-bridge/slack")
 VAULT_KUBECONFIG_PREFIX = os.environ.get("VAULT_KUBECONFIG_PREFIX", "claude-bridge/kubeconfig")
 LOCAL_CLUSTER = os.environ.get("LOCAL_CLUSTER", "core")
@@ -144,74 +145,17 @@ class Vault:
         out = self._authenticated("GET", f"{VAULT_MOUNT}/data/{path}")
         return out["data"]["data"]
 
-    def write(self, path, data):
-        self._authenticated("POST", f"{VAULT_MOUNT}/data/{path}", {"data": data})
-
 
 def digest(obj):
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
 
-def credentials_path():
-    return os.path.join(CLAUDE_HOME, ".claude", ".credentials.json")
-
-
-def materialise_credentials(vault):
-    creds = vault.read(VAULT_OAUTH_PATH)
-    target = credentials_path()
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    with open(target, "w") as f:
-        json.dump(creds, f)
-    os.chmod(target, 0o600)
-    return digest(creds)
-
-
-OAUTH_TOKEN_FIELDS = ("accessToken", "refreshToken")
-
-
-def oauth_tokens(creds):
-    if isinstance(creds, str):
-        try:
-            creds = json.loads(creds)
-        except ValueError:
-            return None
-    if not isinstance(creds, dict):
-        return None
-    if any(field in creds for field in OAUTH_TOKEN_FIELDS):
-        return {field: creds.get(field) for field in OAUTH_TOKEN_FIELDS}
-    for value in creds.values():
-        found = oauth_tokens(value)
-        if found is not None:
-            return found
-    return None
-
-
-def credentials_usable(creds):
-    tokens = oauth_tokens(creds)
-    if tokens is None:
-        return False, "no oauth token fields present"
-    empty = [f for f in OAUTH_TOKEN_FIELDS if not str(tokens.get(f) or "").strip()]
-    if empty:
-        return False, "empty " + " and ".join(empty)
-    return True, "ok"
-
-
-def persist_refreshed_credentials(vault, target, before):
-    try:
-        with open(target) as f:
-            current = json.load(f)
-    except (OSError, ValueError) as exc:
-        LOG.warning("could not re-read credentials after run: %s", exc)
-        return
-    if digest(current) == before:
-        return
-    ok, why = credentials_usable(current)
-    if not ok:
-        LOG.error("refusing to write back credentials to vault (%s); "
-                  "the stored secret at %s is left untouched", why, VAULT_OAUTH_PATH)
-        return
-    vault.write(VAULT_OAUTH_PATH, current)
-    LOG.info("vault: wrote back refreshed credentials")
+def read_anthropic_token(vault):
+    data = vault.read(VAULT_TOKEN_PATH)
+    token = (data.get("token") or "").strip()
+    if not token:
+        raise RuntimeError(f"{VAULT_TOKEN_PATH} has no non-empty 'token' key")
+    return token
 
 
 def kubeconfig_for(vault, cluster):
@@ -267,7 +211,7 @@ def terminate_group(proc):
             continue
 
 
-def run_claude(prompt, kubeconfig=None):
+def run_claude(prompt, token, kubeconfig=None):
     cmd = [
         CLAUDE_BIN, "-p", prompt,
         "--output-format", "json",
@@ -282,6 +226,7 @@ def run_claude(prompt, kubeconfig=None):
     ]
     env = dict(os.environ)
     env["HOME"] = CLAUDE_HOME
+    env[TOKEN_ENV_VAR] = token
     env["PATH"] = "/opt/bin:" + env.get("PATH", "")
     if kubeconfig:
         env["KUBECONFIG"] = kubeconfig
@@ -450,7 +395,7 @@ class Bridge(ThreadingHTTPServer):
             LOG.error("vault read failed for %s (%s): %s", name, VAULT_SLACK_PATH, exc)
             return
         try:
-            before = materialise_credentials(self.vault)
+            token = read_anthropic_token(self.vault)
             kubeconfig = kubeconfig_for(self.vault, cluster)
         except Exception as exc:  # noqa: BLE001
             LOG.error("credential setup failed for %s on %s: %s", name, cluster, exc)
@@ -459,8 +404,7 @@ class Bridge(ThreadingHTTPServer):
             LOG.info("DRY_RUN set; would have triaged %s on %s", name, cluster)
             return
         try:
-            body, err = run_claude(build_prompt(alert, cluster), kubeconfig)
-            persist_refreshed_credentials(self.vault, credentials_path(), before)
+            body, err = run_claude(build_prompt(alert, cluster), token, kubeconfig)
         finally:
             shutil.rmtree(os.path.join(CLAUDE_HOME, ".claude", "projects"), ignore_errors=True)
         if err:
