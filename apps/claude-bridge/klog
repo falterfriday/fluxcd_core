@@ -1,0 +1,48 @@
+#!/bin/sh
+set -u
+
+usage() {
+  echo "usage: klog -n NAMESPACE -p POD -e PATTERN [-c CONTAINER] [-s SINCE] [-t TAIL] [-m MAXLINES]" >&2
+  echo "  searches one pod's logs; SINCE defaults to 24h, MAXLINES to 300" >&2
+  exit 2
+}
+
+NS=""; POD=""; PAT=""; CONTAINER=""; SINCE="24h"; TAIL=""; MAX="300"
+
+while getopts "n:p:e:c:s:t:m:" opt; do
+  case "$opt" in
+    n) NS=$OPTARG ;;
+    p) POD=$OPTARG ;;
+    e) PAT=$OPTARG ;;
+    c) CONTAINER=$OPTARG ;;
+    s) SINCE=$OPTARG ;;
+    t) TAIL=$OPTARG ;;
+    m) MAX=$OPTARG ;;
+    *) usage ;;
+  esac
+done
+
+[ -n "$NS" ] || usage
+[ -n "$POD" ] || usage
+[ -n "$PAT" ] || usage
+
+ok_name() { printf '%s' "$1" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]{0,252}$'; }
+
+ok_name "$NS"  || { echo "klog: invalid namespace" >&2; exit 2; }
+ok_name "$POD" || { echo "klog: invalid pod" >&2; exit 2; }
+[ -z "$CONTAINER" ] || ok_name "$CONTAINER" || { echo "klog: invalid container" >&2; exit 2; }
+printf '%s' "$SINCE" | grep -qE '^[0-9]{1,5}[smhd]$' || { echo "klog: invalid since" >&2; exit 2; }
+[ -z "$TAIL" ] || printf '%s' "$TAIL" | grep -qE '^[0-9]{1,7}$' || { echo "klog: invalid tail" >&2; exit 2; }
+printf '%s' "$MAX" | grep -qE '^[0-9]{1,5}$' || { echo "klog: invalid maxlines" >&2; exit 2; }
+
+set -- logs "$POD" -n "$NS" --since="$SINCE"
+[ -z "$CONTAINER" ] || set -- "$@" -c "$CONTAINER"
+[ -z "$TAIL" ] || set -- "$@" --tail="$TAIL"
+
+out=$(kubectl "$@" 2>&1 | grep -iE -- "$PAT" | head -n "$MAX" || true)
+
+if [ -z "$out" ]; then
+  echo "klog: no lines matching /$PAT/ in $NS/$POD over the last $SINCE"
+else
+  printf '%s\n' "$out"
+fi

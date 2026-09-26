@@ -13,3 +13,4 @@ configMapGenerator:
   - name: claude-bridge-app
     files:
       - bridge.py
+      - klog
