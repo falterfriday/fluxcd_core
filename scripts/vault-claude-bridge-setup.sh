@@ -42,7 +42,7 @@ vault write auth/kubernetes/config \
 echo "==> writing $POLICY policy"
 vault policy write "$POLICY" - <<POLICYEOF
 path "$KV_MOUNT/data/$SECRET_PREFIX/*" {
-  capabilities = ["create", "read", "update"]
+  capabilities = ["read"]
 }
 
 path "$KV_MOUNT/metadata/$SECRET_PREFIX/*" {
@@ -73,15 +73,18 @@ echo "    policy and role present"
 
 cat <<'NEXTEOF'
 
-==> configuration complete. Two secrets must still be seeded by hand so the
-    values never pass through a terminal transcript:
+==> configuration complete. The secrets below must be seeded by hand so the
+    values never pass through a terminal transcript. The bridge has read-only
+    access to them; it never writes to vault.
 
-  vault kv put secret/claude-bridge/oauth @"$HOME/.claude/.credentials.json"
+    A long-lived Anthropic token, from `claude setup-token`. Paste it when
+    prompted rather than passing it as an argument:
+  vault kv put secret/claude-bridge/anthropic-token token=-
 
   vault kv put secret/claude-bridge/slack webhook_url=@"$HOME/.slack-webhook"
 
     Verify without printing the values:
-  vault kv metadata get secret/claude-bridge/oauth
+  vault kv metadata get secret/claude-bridge/anthropic-token
   vault kv metadata get secret/claude-bridge/slack
 
     Core needs no kubeconfig: the bridge uses its own projected ServiceAccount
