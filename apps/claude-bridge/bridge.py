@@ -24,6 +24,8 @@ VAULT_ROLE = os.environ.get("VAULT_ROLE", "claude-bridge")
 VAULT_MOUNT = os.environ.get("VAULT_MOUNT", "secret")
 VAULT_OAUTH_PATH = os.environ.get("VAULT_OAUTH_PATH", "claude-bridge/oauth")
 VAULT_SLACK_PATH = os.environ.get("VAULT_SLACK_PATH", "claude-bridge/slack")
+VAULT_KUBECONFIG_PREFIX = os.environ.get("VAULT_KUBECONFIG_PREFIX", "claude-bridge/kubeconfig")
+LOCAL_CLUSTER = os.environ.get("LOCAL_CLUSTER", "core")
 VAULT_CACERT = os.environ.get("VAULT_CACERT", "/var/run/vault-ca/ca.crt")
 WEBHOOK_TOKEN_FILE = os.environ.get("WEBHOOK_TOKEN_FILE", "/var/run/webhook/token")
 MAX_BODY_BYTES = int(os.environ.get("MAX_BODY_BYTES", str(1 << 20)))
@@ -37,6 +39,7 @@ CLAUDE_EFFORT = os.environ.get("CLAUDE_EFFORT", "medium")
 RUN_TIMEOUT = int(os.environ.get("RUN_TIMEOUT_SECONDS", "600"))
 
 ALLOWLIST = {a.strip() for a in os.environ.get("ALERT_ALLOWLIST", "").split(",") if a.strip()}
+DENYLIST = {a.strip() for a in os.environ.get("ALERT_DENYLIST", "").split(",") if a.strip()}
 COOLDOWN = int(os.environ.get("COOLDOWN_SECONDS", "3600"))
 MAX_RUNS_PER_HOUR = int(os.environ.get("MAX_RUNS_PER_HOUR", "4"))
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
@@ -54,9 +57,11 @@ ALLOWED_TOOLS = [
 DISALLOWED_TOOLS = ["Read", "Grep", "Glob", "Write", "Edit", "NotebookEdit",
                     "WebFetch", "WebSearch", "Task"]
 
-SYSTEM_PROMPT = """You are an SRE assistant triaging a single Prometheus alert on a
-Kubernetes platform cluster named "core". You have READ-ONLY access: your
-credentials cannot mutate anything, and write tools are disabled.
+SYSTEM_PROMPT = """You are an SRE assistant triaging a single Prometheus alert on
+one of four Kubernetes clusters: core, staging, production or internal. The
+prompt names which one, and kubectl is already pointed at it. You have
+READ-ONLY access: your credentials cannot mutate anything, and write tools are
+disabled.
 
 Produce a short advisory for a human operator, in this shape:
   WHAT IS WRONG - one or two sentences, concrete.
@@ -82,6 +87,8 @@ class Gate:
         self._recent = []
 
     def check(self, alertname, fingerprint):
+        if alertname in DENYLIST:
+            return False, f"alertname {alertname!r} is denylisted"
         if ALLOWLIST and alertname not in ALLOWLIST:
             return False, f"alertname {alertname!r} not in allowlist"
         now = time.time()
@@ -207,11 +214,26 @@ def persist_refreshed_credentials(vault, target, before):
     LOG.info("vault: wrote back refreshed credentials")
 
 
-def build_prompt(alert):
+def kubeconfig_for(vault, cluster):
+    if cluster == LOCAL_CLUSTER:
+        return None
+    data = vault.read(f"{VAULT_KUBECONFIG_PREFIX}-{cluster}")
+    body = data.get("kubeconfig")
+    if not body:
+        raise RuntimeError(f"{VAULT_KUBECONFIG_PREFIX}-{cluster} has no 'kubeconfig' key")
+    target = os.path.join(CLAUDE_HOME, f"kubeconfig-{cluster}")
+    with open(target, "w") as f:
+        f.write(body)
+    os.chmod(target, 0o600)
+    return target
+
+
+def build_prompt(alert, cluster):
     labels = alert.get("labels", {})
     anns = alert.get("annotations", {})
     lines = [
-        "Triage this firing Prometheus alert on the core cluster.",
+        f"Triage this firing Prometheus alert on the {cluster} cluster.",
+        f"Your kubectl is already pointed at {cluster}; do not switch context.",
         "",
         f"alertname: {labels.get('alertname')}",
         f"severity:  {labels.get('severity')}",
@@ -245,7 +267,7 @@ def terminate_group(proc):
             continue
 
 
-def run_claude(prompt):
+def run_claude(prompt, kubeconfig=None):
     cmd = [
         CLAUDE_BIN, "-p", prompt,
         "--output-format", "json",
@@ -261,6 +283,10 @@ def run_claude(prompt):
     env = dict(os.environ)
     env["HOME"] = CLAUDE_HOME
     env["PATH"] = "/opt/bin:" + env.get("PATH", "")
+    if kubeconfig:
+        env["KUBECONFIG"] = kubeconfig
+    else:
+        env.pop("KUBECONFIG", None)
     LOG.info("running claude (timeout %ss, model %s)", RUN_TIMEOUT, CLAUDE_MODEL)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             text=True, env=env, cwd=CLAUDE_HOME,
@@ -416,7 +442,8 @@ class Bridge(ThreadingHTTPServer):
                     LOG.exception("unhandled error while triaging %s (%s)", name, fp[:8])
 
     def handle_alert(self, alert, name):
-        LOG.info("triaging %s", name)
+        cluster = alert.get("labels", {}).get("k8s_cluster", LOCAL_CLUSTER)
+        LOG.info("triaging %s on %s", name, cluster)
         try:
             slack = self.vault.read(VAULT_SLACK_PATH).get("webhook_url")
         except Exception as exc:  # noqa: BLE001
@@ -424,25 +451,26 @@ class Bridge(ThreadingHTTPServer):
             return
         try:
             before = materialise_credentials(self.vault)
+            kubeconfig = kubeconfig_for(self.vault, cluster)
         except Exception as exc:  # noqa: BLE001
-            LOG.error("credential setup failed for %s: %s", name, exc)
+            LOG.error("credential setup failed for %s on %s: %s", name, cluster, exc)
             return
         if DRY_RUN:
-            LOG.info("DRY_RUN set; would have triaged %s", name)
+            LOG.info("DRY_RUN set; would have triaged %s on %s", name, cluster)
             return
         try:
-            body, err = run_claude(build_prompt(alert))
+            body, err = run_claude(build_prompt(alert, cluster), kubeconfig)
             persist_refreshed_credentials(self.vault, credentials_path(), before)
         finally:
             shutil.rmtree(os.path.join(CLAUDE_HOME, ".claude", "projects"), ignore_errors=True)
         if err:
-            LOG.error("run failed for %s: %s", name, err)
+            LOG.error("run failed for %s on %s: %s", name, cluster, err)
             if slack:
-                post_slack(slack, name, err, failed=True)
+                post_slack(slack, f"{name} ({cluster})", err, failed=True)
             return
-        LOG.info("advisory for %s: %s", name, body.replace("\n", " ")[:400])
+        LOG.info("advisory for %s on %s: %s", name, cluster, body.replace("\n", " ")[:400])
         if slack:
-            post_slack(slack, name, body)
+            post_slack(slack, f"{name} ({cluster})", body)
 
 
 def main():
@@ -467,9 +495,10 @@ def main():
     vault = Vault()
     vault.login()
     server = Bridge(("", 8080), vault, Gate())
-    LOG.info("listening on :8080  bearer auth required on /alert  "
-             "allowlist=%s cooldown=%ss cap=%s/h dry_run=%s",
-             sorted(ALLOWLIST) or "<any>", COOLDOWN, MAX_RUNS_PER_HOUR, DRY_RUN)
+    LOG.info("listening on :8080  bearer auth required on /alert  allowlist=%s denylist=%s "
+             "cooldown=%ss cap=%s/h dry_run=%s",
+             sorted(ALLOWLIST) or "<any>", sorted(DENYLIST) or "<none>",
+             COOLDOWN, MAX_RUNS_PER_HOUR, DRY_RUN)
     server.serve_forever()
     return 0
 
