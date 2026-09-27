@@ -34,7 +34,7 @@ variable "firewall_enabled" {
 }
 
 variable "forgejo_ssh_sources" {
-  description = "CIDRs allowed to reach Forgejo git-over-SSH on 2222. Must match the Service loadBalancerSourceRanges in apps/forgejo. Deliberately not port 22, which stays restricted to firewall_admin_sources for the node sshd"
+  description = "CIDRs allowed to reach Forgejo git-over-SSH on 2222, which ingress-nginx proxies from the ingress VIP to the forgejo-ssh ClusterIP. Deliberately not port 22, which stays restricted to firewall_admin_sources for the node sshd"
   type        = list(string)
   default     = []
 }

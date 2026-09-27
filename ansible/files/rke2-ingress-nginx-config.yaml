@@ -26,3 +26,5 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
+    tcp:
+      "2222": "forgejo/forgejo-ssh:2222"
