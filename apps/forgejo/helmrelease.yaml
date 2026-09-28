@@ -147,8 +147,6 @@ spec:
         indexer:
           REPO_INDEXER_ENABLED: true
         actions:
-          # Enables Forgejo Actions, which the opengym chart's CI/CD pipelines run on.
-          # Needs a registered runner to do anything: see apps/forgejo-runner.
           ENABLED: true
         log:
           LEVEL: info

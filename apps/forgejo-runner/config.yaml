@@ -1,0 +1,29 @@
+log:
+  level: info
+
+runner:
+  file: /data/.runner
+  capacity: 2
+  timeout: 1h
+  shutdown_timeout: 3h
+  insecure: false
+  fetch_timeout: 5s
+  fetch_interval: 2s
+  labels:
+    - "ubuntu-latest:docker://catthehacker/ubuntu:act-22.04"
+    - "ubuntu-22.04:docker://catthehacker/ubuntu:act-22.04"
+
+cache:
+  enabled: true
+  dir: /data/cache
+
+container:
+  docker_host: automount
+  valid_volumes:
+    - "*"
+  network: ""
+  privileged: false
+  force_pull: false
+
+host:
+  workdir_parent: /data/workspace
