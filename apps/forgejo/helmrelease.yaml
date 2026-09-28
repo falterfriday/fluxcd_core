@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: forgejo
-      version: "17.1.6"
+      version: "17.1.7"
       sourceRef:
         kind: HelmRepository
         name: forgejo
@@ -147,6 +147,8 @@ spec:
         indexer:
           REPO_INDEXER_ENABLED: true
         actions:
-          ENABLED: false
+          # Enables Forgejo Actions, which the opengym chart's CI/CD pipelines run on.
+          # Needs a registered runner to do anything: see apps/forgejo-runner.
+          ENABLED: true
         log:
           LEVEL: info
