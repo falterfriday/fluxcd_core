@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: forgejo-runner-token
+    namespace: forgejo-runner
+type: Opaque
+stringData:
+    token: ENC[AES256_GCM,data:BhnP1jxi5EfqbmAZEXL/dSM5vhbflftlpKXovmncsQ/LhGhcMxyVSWMGFw==,iv:UckKw+Rqy3GExHMH2Hzmsyrxv6MpyQN2DtgbpxenygU=,tag:ZcmhWzTINBwXU6jiP3UdHA==,type:str]
+sops:
+    age:
+        - recipient: age15w65euzcyg3c3zltzd3t97tlqrq2d9c0ufltvjrwuh0geelgacwqkd7cxf
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBodEhqQmZzQkw3WWNzWXdC
+            Ym45UGRVQjBaN1UzK0JGZHFzSDE4ZU14ajF3CmhwaUJUcXBNN0JSNmx1K1doWllv
+            UFl5ODhiYkxWdnVWR1NaK2JVdVR3WW8KLS0tIE5xdk1Cak41NzlqdHppdHc1aHZK
+            MlgzNHJXM1ZuWFVYNlBPOUtPNFM0S1UK/XycF5+cmTLVNCUIsJk6FLcGdcT7+UAb
+            bRRFHoy0NW7YaeBcSbpFDq/Fu0ujwsgesLQhAOH39+prwtP94RAK0w==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-09-28T01:21:34Z"
+    mac: ENC[AES256_GCM,data:6irICr8uKAnT5rUUFwh6wZqDroJ6bdaTG5bfEfftzjBz/D7WFXywGTWMJifhdSs8u9EjqIQqWhdU+W5dOi9JZOB8xV8MTM87A4h4L5eUA16QP/3vezMaqvuOdYG+FDtfok/Xu47PDtqdPEK5NH6qPDwRSYXGtNnqJo6aIDz96oE=,iv:fpc0/t5DHTKjo1wART59SSGoHO4fiomYuF6lbZZWkpg=,tag:/+iYB9aouTdQOf39Eze6zg==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.1
