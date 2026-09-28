@@ -30,6 +30,8 @@ spec:
         app.kubernetes.io/name: forgejo-runner
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: runner
           image: code.forgejo.org/forgejo/runner:9
@@ -45,6 +47,7 @@ spec:
               if [ ! -f /data/.runner ]; then
                 echo "registering with ${FORGEJO_INSTANCE_URL}"
                 forgejo-runner register --no-interactive \
+                  --config /config/config.yaml \
                   --instance "${FORGEJO_INSTANCE_URL}" \
                   --token "${RUNNER_TOKEN}" \
                   --name "${RUNNER_NAME}" \
@@ -87,6 +90,9 @@ spec:
             limits:
               memory: 1Gi
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
