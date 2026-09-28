@@ -101,6 +101,8 @@ spec:
           image: docker:28-dind
           args:
             - --mtu=1450
+            - --default-network-opt
+            - bridge=com.docker.network.driver.mtu=1450
           securityContext:
             privileged: true
           env:
