@@ -99,6 +99,8 @@ spec:
 
         - name: dind
           image: docker:28-dind
+          args:
+            - --mtu=1450
           securityContext:
             privileged: true
           env:
