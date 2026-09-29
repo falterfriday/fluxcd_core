@@ -40,7 +40,7 @@ spec:
             - -c
             - |
               set -e
-              while ! nc -z 127.0.0.1 2376; do
+              while [ ! -S /var/run/docker.sock ]; do
                 echo "waiting for the docker daemon..."
                 sleep 2
               done
@@ -69,20 +69,15 @@ spec:
                   name: forgejo-runner-token
                   key: token
             - name: DOCKER_HOST
-              value: tcp://127.0.0.1:2376
-            - name: DOCKER_CERT_PATH
-              value: /certs/client
-            - name: DOCKER_TLS_VERIFY
-              value: "1"
+              value: unix:///var/run/docker.sock
           volumeMounts:
             - name: data
               mountPath: /data
             - name: config
               mountPath: /config
               readOnly: true
-            - name: docker-certs-client
-              mountPath: /certs/client
-              readOnly: true
+            - name: docker-socket
+              mountPath: /var/run
           resources:
             requests:
               cpu: 100m
@@ -103,6 +98,7 @@ spec:
             - --mtu=1450
             - --default-network-opt
             - bridge=com.docker.network.driver.mtu=1450
+            - --group=1000
           securityContext:
             privileged: true
           env:
@@ -113,6 +109,8 @@ spec:
               mountPath: /certs/ca
             - name: docker-certs-client
               mountPath: /certs/client
+            - name: docker-socket
+              mountPath: /var/run
             - name: docker-storage
               mountPath: /var/lib/docker
           resources:
@@ -138,6 +136,8 @@ spec:
         - name: docker-certs-ca
           emptyDir: {}
         - name: docker-certs-client
+          emptyDir: {}
+        - name: docker-socket
           emptyDir: {}
         - name: docker-storage
           emptyDir: {}
