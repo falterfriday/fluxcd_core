@@ -37,6 +37,16 @@
         persistent: present
       loop: "{{ core_kernel_modules }}"
 
+    - name: Raise inotify limits for nested container workloads
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_file: /etc/sysctl.d/99-core-cluster.conf
+        sysctl_set: true
+        reload: true
+        state: present
+      loop: "{{ core_sysctl_settings | dict2items }}"
+
     - name: Inspect the OSD device
       ansible.builtin.command: >-
         lsblk -ndo NAME,SIZE,FSTYPE,MOUNTPOINT {{ core_osd_device }}

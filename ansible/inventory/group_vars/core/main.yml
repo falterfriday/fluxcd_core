@@ -3,6 +3,10 @@ core_kernel_modules:
   - rbd
   - nbd
 
+core_sysctl_settings:
+  fs.inotify.max_user_instances: 1024
+  fs.inotify.max_user_watches: 524288
+
 rke2_type: server
 rke2_ha_mode: true
 rke2_ha_mode_keepalived: false

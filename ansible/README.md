@@ -68,13 +68,22 @@ One play against all three guests, then a report:
    `/dev/virtio-ports/org.qemu.guest_agent.0` exists. That device only appears
    after Terraform's second pass sets `agent = true` and the guest reboots.
 4. Loads `rbd` and `nbd` for Rook-Ceph, persistently.
-5. Asserts the OSD device is raw. Rook zaps it on first use, which is correct
+5. Raises `fs.inotify.max_user_instances` to 1024 and
+   `fs.inotify.max_user_watches` to 524288, written to
+   `/etc/sysctl.d/99-core-cluster.conf`. The Ubuntu default of 128 instances is
+   too low for nested container workloads: the Forgejo Actions runner builds
+   `kind` clusters inside Docker-in-Docker, and its `kube-proxy` dies with
+   `too many open files`, which in turn leaves CoreDNS stuck in
+   `ContainerCreating` and the local-path provisioner absent. The values are
+   kind's documented minimums with headroom for two concurrent jobs. Settings
+   live in `core_sysctl_settings` in `group_vars/core/main.yml`.
+6. Asserts the OSD device is raw. Rook zaps it on first use, which is correct
    for a new disk and catastrophic for one holding data, so the play stops if
    anything has claimed it. The device is addressed by `/dev/disk/by-id/...`,
    never `/dev/sdb` — kernel names are not stable across reboots.
-6. Disables swap, in memory and in `/etc/fstab`.
-7. Runs `lablabs.rke2`.
-8. Waits for every node to register and prints them.
+7. Disables swap, in memory and in `/etc/fstab`.
+8. Runs `lablabs.rke2`.
+9. Waits for every node to register and prints them.
 
 ## Ingress manifest
 
