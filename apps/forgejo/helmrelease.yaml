@@ -127,7 +127,7 @@ spec:
           FROM: "STP Labs Forge <forgejo@stplabs.io>"
         service:
           DISABLE_REGISTRATION: true
-          REQUIRE_SIGNIN_VIEW: true
+          REQUIRE_SIGNIN_VIEW: false
           ENABLE_NOTIFY_MAIL: true
         oauth2_client:
           ENABLE_AUTO_REGISTRATION: true
@@ -144,6 +144,7 @@ spec:
           ADAPTER: memory
         repository:
           DEFAULT_BRANCH: main
+          DEFAULT_PRIVATE: private
         indexer:
           REPO_INDEXER_ENABLED: true
         actions:
