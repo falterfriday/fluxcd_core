@@ -6,5 +6,6 @@ resources:
   - claude-bridge
   - forgejo
   - forgejo-runner
+  - litellm
   - smtp-relay
   - vault

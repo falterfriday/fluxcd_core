@@ -1,0 +1,24 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: litellm-vault-ca
+  namespace: litellm
+spec:
+  secretName: litellm-vault-ca
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - client auth
+  commonName: litellm.litellm.svc
+  dnsNames:
+    - litellm.litellm.svc
+    - litellm.litellm.svc.cluster.local
+  issuerRef:
+    name: internal-ca-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
