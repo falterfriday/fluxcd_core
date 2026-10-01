@@ -15,5 +15,6 @@ configMapGenerator:
     namespace: authentik
     files:
       - blueprints/foundation.yaml
+      - blueprints/branding.yaml
     options:
       disableNameSuffixHash: true
