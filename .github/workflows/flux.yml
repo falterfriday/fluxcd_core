@@ -4,6 +4,7 @@ name: flux
 on:
   pull_request:
     paths:
+      - 'apps/**'
       - 'clusters/**'
       - 'repositories/**'
       - 'infrastructure/**'
@@ -15,6 +16,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'apps/**'
       - 'clusters/**'
       - 'repositories/**'
       - 'infrastructure/**'
@@ -78,7 +80,7 @@ jobs:
         run: pip install --disable-pip-version-check yamllint
 
       - name: Lint Flux manifests
-        run: yamllint -f github -c .yamllint.yaml clusters/ repositories/ infrastructure/ bootstrap/
+        run: yamllint -f github -c .yamllint.yaml apps/ clusters/ repositories/ infrastructure/ bootstrap/
 
   manifests:
     name: build and schema-validate
