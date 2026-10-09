@@ -4,8 +4,6 @@ kind: Kustomization
 namespace: litellm
 resources:
   - namespace.yaml
-  - rbac.yaml
-  - certificate.yaml
   - litellm-secret.sops.yaml
   - networkpolicy.yaml
   - service.yaml
