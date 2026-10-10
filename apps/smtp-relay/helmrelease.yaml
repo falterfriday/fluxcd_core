@@ -63,6 +63,16 @@ spec:
               olddir /var/log/
               maxage 90
           }
+    extraVolumes:
+      - name: logrotate-rsyslog
+        configMap:
+          name: smtp-relay-logrotate-rsyslog
+          defaultMode: 0644
+    extraVolumeMounts:
+      - name: logrotate-rsyslog
+        mountPath: /etc/logrotate.d/rsyslog
+        subPath: rsyslog
+        readOnly: true
     pod:
       securityContext:
         seccompProfile:
