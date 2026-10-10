@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smtp-relay-logrotate-rsyslog
+  namespace: smtp-relay
+data:
+  rsyslog: |
+    /var/log/syslog
+    /var/log/kern.log
+    /var/log/auth.log
+    /var/log/user.log
+    /var/log/cron.log
+    {
+    	rotate 4
+    	weekly
+    	missingok
+    	notifempty
+    	compress
+    	delaycompress
+    	sharedscripts
+    	postrotate
+    		/usr/lib/rsyslog/rsyslog-rotate
+    	endscript
+    }
