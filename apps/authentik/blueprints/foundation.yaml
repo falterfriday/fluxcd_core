@@ -2,6 +2,11 @@ version: 1
 metadata:
   name: core - foundation
 entries:
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: Default - Authentication flow
+      required: false
   - identifiers:
       slug: default-recovery-flow
     id: flow
@@ -159,6 +164,7 @@ entries:
       user_fields:
         - email
         - username
+      password_stage: !Find [authentik_stages_password.passwordstage, [name, default-authentication-password]]
       recovery_flow: !KeyOf flow
   - identifiers:
       username: akadmin
