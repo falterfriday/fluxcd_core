@@ -94,6 +94,68 @@ spec:
               annotations:
                 summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping
                 description: Container {{ $labels.container }} has restarted more than 3 times in 15 minutes.
+          - name: internal-cnpg
+            interval: 60s
+            rules:
+            - alert: CNPGInstanceDown
+              expr: up{k8s_cluster="internal", container="postgres", endpoint="metrics"} == 0 or cnpg_collector_up{k8s_cluster="internal"}
+                == 0
+              for: 5m
+              labels:
+                severity: critical
+              annotations:
+                summary: Postgres instance {{ $labels.namespace }}/{{ $labels.pod }} is down
+                description: The CNPG metrics endpoint for {{ $labels.namespace }}/{{ $labels.pod }} has been unreachable or
+                  reporting the collector down for 5 minutes.
+            - alert: CNPGWALArchivingStuck
+              expr: cnpg_collector_pg_wal_archive_status{k8s_cluster="internal", value="ready"} > 0
+              for: 15m
+              labels:
+                severity: critical
+              annotations:
+                summary: WAL archiving is stuck for {{ $labels.namespace }}/{{ $labels.pod }}
+                description: '{{ $value }} WAL segment(s) have been waiting to upload to the object store for 15 minutes.
+                  Point-in-time recovery stops advancing, and WAL keeps accumulating on the WAL volume until Postgres halts.
+                  Check the plugin-barman-cloud sidecar logs and the S3 credentials.'
+            - alert: CNPGWALVolumeFilling
+              expr: (kubelet_volume_stats_used_bytes{k8s_cluster="internal", persistentvolumeclaim=~".+-[0-9]+-wal"} / kubelet_volume_stats_capacity_bytes{k8s_cluster="internal",
+                persistentvolumeclaim=~".+-[0-9]+-wal"}) > 0.80
+              for: 10m
+              labels:
+                severity: critical
+              annotations:
+                summary: WAL volume {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage
+                  }} full
+                description: Postgres stops accepting writes when its WAL volume is full. This usually means WAL archiving
+                  is failing; see CNPGWALArchivingStuck.
+            - alert: CNPGDataVolumeFilling
+              expr: (kubelet_volume_stats_used_bytes{k8s_cluster="internal", persistentvolumeclaim=~".+-cnpg-.+-[0-9]+"} / kubelet_volume_stats_capacity_bytes{k8s_cluster="internal",
+                persistentvolumeclaim=~".+-cnpg-.+-[0-9]+"}) > 0.85
+              for: 30m
+              labels:
+                severity: warning
+              annotations:
+                summary: Postgres data volume {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage
+                  }} full
+                description: Above 85% for 30 minutes. Increase cnpg.main.cluster.storage.size in the app's HelmRelease.
+            - alert: CNPGBackupStale
+              expr: (time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{k8s_cluster="internal"}) > 93600
+              for: 30m
+              labels:
+                severity: warning
+              annotations:
+                summary: No successful base backup for {{ $labels.namespace }}/{{ $labels.pod }} in {{ $value | humanizeDuration
+                  }}
+                description: Base backups are scheduled daily; the most recent successful one is over 26 hours old.
+            - alert: CNPGBackupFailed
+              expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{k8s_cluster="internal"} > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{k8s_cluster="internal"}
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: The latest base backup for {{ $labels.namespace }}/{{ $labels.pod }} failed
+                description: The most recent backup attempt failed after the last successful one. Check the Backup resources
+                  in {{ $labels.namespace }} and the plugin-barman-cloud sidecar logs.
           - name: estate-availability
             interval: 60s
             rules:
