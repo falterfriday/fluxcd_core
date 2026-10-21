@@ -1,0 +1,20 @@
+version: 1
+metadata:
+  name: core - oidc scope mappings
+entries:
+  # authentik's managed 'email' mapping hard-codes email_verified: False.
+  # Clients that link accounts by email (Mealie >= 3.x refuses to log in
+  # without email_verified: true) need the IdP to assert verification.
+  # Only valid while users cannot set their own email address in authentik
+  # (admin-managed addresses; recovery proves inbox control via the email stage).
+  - model: authentik_providers_oauth2.scopemapping
+    identifiers:
+      name: "stplabs: OpenID 'email' (verified)"
+    attrs:
+      scope_name: email
+      description: Email address (admin-managed, asserted verified)
+      expression: |
+        return {
+            "email": request.user.email,
+            "email_verified": bool(request.user.email),
+        }
