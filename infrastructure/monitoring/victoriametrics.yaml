@@ -27,7 +27,7 @@ spec:
       persistentVolume:
         enabled: true
         storageClassName: ceph-block
-        size: 50Gi
+        size: 80Gi
         accessModes:
           - ReadWriteOnce
       podSecurityContext:
