@@ -8,6 +8,7 @@ resources:
   - blueprints-oidc.sops.yaml
   - blueprints-oidc-grafana.sops.yaml
   - blueprints-oidc-vault.sops.yaml
+  - blueprints-oidc-mealie.sops.yaml
   - cnpg-cluster.yaml
   - helmrelease.yaml
 configMapGenerator:
