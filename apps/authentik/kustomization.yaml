@@ -17,5 +17,6 @@ configMapGenerator:
     files:
       - blueprints/foundation.yaml
       - blueprints/branding.yaml
+      - blueprints/oidc-scope-mappings.yaml
     options:
       disableNameSuffixHash: true
