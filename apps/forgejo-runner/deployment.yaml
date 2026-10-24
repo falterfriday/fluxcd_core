@@ -121,6 +121,7 @@ spec:
             requests:
               cpu: 200m
               memory: 2Gi
+              ephemeral-storage: 10Gi
             limits:
               memory: 6Gi
           livenessProbe:
@@ -143,5 +144,11 @@ spec:
           emptyDir: {}
         - name: docker-socket
           emptyDir: {}
+        # Image layers, build cache and Trivy DBs. Without a cap this grows until kubelet's
+        # nodefs.available<5% hard eviction - on a control-plane node shared with etcd and
+        # Forgejo. Over the cap, kubelet evicts only this pod: in-flight jobs fail, the cache
+        # is wiped, registration survives on the data PVC. Sized for capacity: 2 concurrent
+        # heavy builds (calibre-web-nextgen ~3 GB image, home-assistant ~2 GB) on ~96 GiB nodes.
         - name: docker-storage
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 30Gi
