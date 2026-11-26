@@ -52,6 +52,12 @@ spec:
       extraArgs:
         maxLabelsPerTimeseries: "40"
         search.maxQueryDuration: 60s
+        # Required for HA Prometheus agent pairs (internal runs 2 replicas so a
+        # single node failure can't blind monitoring). Keeps one sample per series
+        # per 30s window. Global: jobs scraped faster than 30s (kubelet, rook-ceph)
+        # are stored at 30s resolution. Must be deployed BEFORE the internal agent
+        # goes to 2 replicas, otherwise sum()/count() over internal series double.
+        dedup.minScrapeInterval: 30s
       statefulSet:
         enabled: true
       serviceMonitor:

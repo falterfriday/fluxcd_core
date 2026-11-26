@@ -52,14 +52,20 @@ spec:
           - name: internal-cluster
             interval: 60s
             rules:
+            # A NotReady node's node-exporter drops out of service discovery, so its
+            # `up` series vanishes rather than reading 0, and `up == 0` never fires.
+            # Compare against the node list instead: this fires whether the target
+            # is down or missing.
             - alert: InternalNodeDown
-              expr: up{k8s_cluster="internal", job="node-exporter"} == 0
+              expr: kube_node_info{k8s_cluster="internal"} unless on (internal_ip) label_replace(up{k8s_cluster="internal",
+                job="node-exporter"} == 1, "internal_ip", "$1", "instance", "([^:]+):.*")
               for: 5m
               labels:
                 severity: critical
               annotations:
-                summary: Node {{ $labels.instance }} is down
-                description: node-exporter on {{ $labels.instance }} has been unreachable for 5 minutes.
+                summary: Node {{ $labels.node }} is down
+                description: node-exporter on {{ $labels.node }} ({{ $labels.internal_ip }}) has been down or missing from
+                  scrape targets for 5 minutes.
             - alert: InternalNodeNotReady
               expr: kube_node_status_condition{k8s_cluster="internal", condition="Ready", status="true"} == 0
               for: 10m
